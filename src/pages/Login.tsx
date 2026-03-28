@@ -98,11 +98,22 @@ const Login = () => {
                             </div>
                         ) : (
                             <>
-                                <div className="w-full flex justify-center min-h-[40px]">
-                                    <GoogleLogin
-                                        onSuccess={handleGoogleSuccess}
-                                        onError={() => setError('Google Sign-In failed')}
-                                    />
+                                <div className="w-full flex flex-col space-y-3 items-center">
+                                    <div className="w-full flex justify-center min-h-[40px]">
+                                        <GoogleLogin
+                                            onSuccess={handleGoogleSuccess}
+                                            onError={() => setError('Google Sign-In failed')}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            const baseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://cmsbe.securedapp.io';
+                                            window.location.href = `${baseUrl}/auth/google-login`;
+                                        }}
+                                        className="text-xs text-indigo-600 hover:text-indigo-500 font-medium transition-colors"
+                                    >
+                                        Trouble with the button? Try direct redirect
+                                    </button>
                                 </div>
 
                                 <div className="relative w-full">

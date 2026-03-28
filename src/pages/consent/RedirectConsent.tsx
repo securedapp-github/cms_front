@@ -87,7 +87,7 @@ export default function RedirectConsent() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/public/apps/${appId}/consent/redirect/request`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://cmsbe.securedapp.io'}/public/apps/${appId}/consent/redirect/request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
