@@ -1,13 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import StatsBanner from './components/StatsBanner';
-import AboutCMS from './components/AboutCMS';
-import Benefits from './components/Benefits';
-import FeaturesGrid from './components/FeaturesGrid';
-import FAQ from './components/FAQ';
-import Footer from './components/Footer';
-import FeatureCards from './components/FeatureCards';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Auth Components and Pages
 import { ProtectedRoute, OnboardingRoute, PublicRoute } from './components/auth/RouteGuards';
@@ -31,36 +22,20 @@ import { Toaster } from 'react-hot-toast';
 import RedirectConsent from './pages/consent/RedirectConsent';
 import ConsentResult from './pages/consent/ConsentResult';
 
-const LandingPage = () => (
-  <div className="min-h-screen bg-slate-50 font-sans">
-    <Navbar />
-    <Hero />
-    <FeatureCards />
-    <StatsBanner />
-    <AboutCMS />
-    <Benefits />
-    <FeaturesGrid />
-    <FAQ />
-    <Footer />
-  </div>
-);
-
 function App() {
   return (
     <>
       <Toaster position="top-right" />
       <BrowserRouter>
         <Routes>
-          {/* Public Landing Page */}
-          <Route path="/" element={<LandingPage />} />
-
           {/* Consent Flow Pages */}
           <Route path="/consent/redirect" element={<RedirectConsent />} />
           <Route path="/consent/result" element={<ConsentResult />} />
 
           {/* Auth routes (Only unauthenticated users) */}
           <Route element={<PublicRoute />}>
-            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Navigate to="/" replace />} />
           </Route>
 
           {/* Onboarding route (Only users needing onboarding) */}
@@ -90,5 +65,6 @@ function App() {
     </>
   );
 }
+
 
 export default App;

@@ -26,8 +26,8 @@ apiClient.interceptors.response.use(
         if (error.response) {
             if (error.response.status === 401) {
                 localStorage.removeItem('token');
-                if (window.location.pathname !== '/login') {
-                    window.location.href = '/login';
+                if (window.location.pathname !== '/') {
+                    window.location.href = '/';
                 }
             } else if (error.response.status === 403) {
                 toast.error('Permission denied.');

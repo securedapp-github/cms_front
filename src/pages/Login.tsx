@@ -98,14 +98,10 @@ const Login = () => {
                             </div>
                         ) : (
                             <>
-                                <div className="w-full flex justify-center">
+                                <div className="w-full flex justify-center min-h-[40px]">
                                     <GoogleLogin
                                         onSuccess={handleGoogleSuccess}
                                         onError={() => setError('Google Sign-In failed')}
-                                        theme="outline"
-                                        text="signin_with"
-                                        shape="rectangular"
-                                        useOneTap={false}
                                     />
                                 </div>
 

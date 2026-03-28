@@ -9,7 +9,7 @@ export const ProtectedRoute = () => {
         if (onboardingToken) {
             return <Navigate to="/onboarding" replace />;
         }
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/" replace />;
     }
 
     return <Outlet />;
@@ -24,7 +24,7 @@ export const OnboardingRoute = () => {
     }
 
     if (!onboardingToken) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/" replace />;
     }
 
     return <Outlet />;
