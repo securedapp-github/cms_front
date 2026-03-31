@@ -13,6 +13,7 @@ import {
     Info
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { CopyButton } from '../components/ui/CopyButton';
 
 const EVENT_OPTIONS = [
     { id: 'consent.granted', label: 'consent.granted' },
@@ -160,7 +161,15 @@ export default function Webhooks() {
                                 webhooks.map((webhook) => (
                                     <tr key={webhook.id} className="hover:bg-slate-50/50 transition-all group">
                                         <td className="px-8 py-6">
-                                            <span className="text-xs font-mono font-bold text-slate-400">#{webhook.id.substring(0, 8)}</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span
+                                                    className="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md border border-slate-200"
+                                                    title={webhook.id}
+                                                >
+                                                    #{webhook.id.substring(0, 8)}
+                                                </span>
+                                                <CopyButton text={webhook.id} iconSize={12} />
+                                            </div>
                                         </td>
                                         <td className="px-8 py-6">
                                             <div className="flex items-center">
@@ -307,7 +316,15 @@ export default function Webhooks() {
                         <div className="px-8 py-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
                             <div>
                                 <h3 className="text-xl font-bold text-slate-900">Webhook Details</h3>
-                                <p className="text-xs font-medium text-slate-500 uppercase tracking-widest mt-1">ID: #{selectedWebhook.id.substring(0, 12)}</p>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <span
+                                        className="text-xs font-mono font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200"
+                                        title={selectedWebhook.id}
+                                    >
+                                        #{selectedWebhook.id.substring(0, 12)}
+                                    </span>
+                                    <CopyButton text={selectedWebhook.id} iconSize={12} />
+                                </div>
                             </div>
                             <button onClick={() => setSelectedWebhook(null)} className="p-2 hover:bg-white rounded-2xl text-slate-400 hover:text-slate-600 transition-all border border-transparent hover:border-slate-100">
                                 <X className="w-5 h-5" />

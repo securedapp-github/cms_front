@@ -48,7 +48,7 @@ const Consents = () => {
     // Create form state
     const [newConsentEmail, setNewConsentEmail] = useState('');
     const [newConsentPhone, setNewConsentPhone] = useState('');
-    const [newConsentPurposeId, setNewConsentPurposeId] = useState('');
+    const [newConsentPurposeIds, setNewConsentPurposeIds] = useState<string[]>([]);
     const [newConsentPolicyId, setNewConsentPolicyId] = useState('');
     const [identityHash, setIdentityHash] = useState('');
 
@@ -136,8 +136,8 @@ const Consents = () => {
             toast.error('Please provide at least Email or Phone Number');
             return;
         }
-        if (!newConsentPurposeId || !newConsentPolicyId) {
-            toast.error('Please select a Purpose and Policy');
+        if (newConsentPurposeIds.length === 0 || !newConsentPolicyId) {
+            toast.error('Please select at least one Purpose and a Policy');
             return;
         }
 
@@ -146,7 +146,7 @@ const Consents = () => {
             const response = await consentApi.requestManualOtp(selectedAppId!, {
                 email: newConsentEmail,
                 phone_number: newConsentPhone || undefined,
-                purposeId: newConsentPurposeId,
+                purpose_ids: newConsentPurposeIds,
                 policyVersionId: newConsentPolicyId
             });
             
@@ -192,7 +192,7 @@ const Consents = () => {
     const resetCreateForm = () => {
         setNewConsentEmail('');
         setNewConsentPhone('');
-        setNewConsentPurposeId('');
+        setNewConsentPurposeIds([]);
         setIsOtpStep(false);
         setManualSessionId('');
         setOtpCode('');
@@ -625,20 +625,54 @@ const Consents = () => {
                                         </div>
                                     )}
 
-                                    {/* Purpose Selection */}
+                                    {/* Purpose Selection – Checkbox Group */}
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Consent Purpose</label>
-                                        <select
-                                            required
-                                            className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all appearance-none cursor-pointer"
-                                            value={newConsentPurposeId}
-                                            onChange={(e) => setNewConsentPurposeId(e.target.value)}
-                                        >
-                                            <option value="" disabled>Select a Purpose</option>
-                                            {purposes.map(p => (
-                                                <option key={p.id} value={p.id}>{p.name}</option>
-                                            ))}
-                                        </select>
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Consent Purpose(s)</label>
+                                        {purposes.length === 0 ? (
+                                            <p className="text-xs text-slate-400 italic px-1">No purposes found. Please create one first.</p>
+                                        ) : (
+                                            <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl max-h-44 overflow-y-auto space-y-1">
+                                                {purposes.map((p) => {
+                                                    const isChecked = newConsentPurposeIds.includes(p.id);
+                                                    return (
+                                                        <label
+                                                            key={p.id}
+                                                            htmlFor={`purpose-cb-${p.id}`}
+                                                            className={`flex items-start gap-3 p-2.5 rounded-xl cursor-pointer transition-all select-none ${
+                                                                isChecked
+                                                                    ? 'bg-indigo-50 border border-indigo-100'
+                                                                    : 'hover:bg-white border border-transparent'
+                                                            }`}
+                                                        >
+                                                            <input
+                                                                type="checkbox"
+                                                                id={`purpose-cb-${p.id}`}
+                                                                checked={isChecked}
+                                                                onChange={(e) => {
+                                                                    setNewConsentPurposeIds(prev =>
+                                                                        e.target.checked
+                                                                            ? [...prev, p.id]
+                                                                            : prev.filter(id => id !== p.id)
+                                                                    );
+                                                                }}
+                                                                className="mt-0.5 w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 shrink-0"
+                                                            />
+                                                            <div>
+                                                                <p className={`text-sm font-bold ${isChecked ? 'text-indigo-700' : 'text-slate-700'}`}>{p.name}</p>
+                                                                {p.description && (
+                                                                    <p className="text-[10px] text-slate-400 font-medium leading-tight mt-0.5 line-clamp-1">{p.description}</p>
+                                                                )}
+                                                            </div>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                        {newConsentPurposeIds.length > 0 && (
+                                            <p className="text-[10px] font-bold text-indigo-600 ml-1">
+                                                {newConsentPurposeIds.length} purpose{newConsentPurposeIds.length > 1 ? 's' : ''} selected
+                                            </p>
+                                        )}
                                     </div>
 
                                     {/* Policy Version Selection */}
@@ -683,7 +717,7 @@ const Consents = () => {
                                         </button>
                                         <button
                                             type="submit"
-                                            disabled={isCreating || policies.length === 0}
+                                            disabled={isCreating || policies.length === 0 || newConsentPurposeIds.length === 0}
                                             className="flex-[2] px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-indigo-100 active:scale-[0.98] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             {isCreating ? (

@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { 
-    Building2, 
     Briefcase, 
     Globe2, 
     AlertCircle, 
     ArrowRight, 
     FileText, 
     MapPin,
-    Building
+    Building,
+    Building2
 } from 'lucide-react';
 import { tenantApi } from '../api/tenantApi';
+import logo from '../assets/img/STRIGHT.png';
 
 const Onboarding = () => {
     const { user, completeOnboarding } = useAuthStore();
@@ -84,8 +85,8 @@ const Onboarding = () => {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center">
-                <div className="inline-flex items-center justify-center p-3 bg-indigo-100 rounded-2xl text-indigo-600 mb-6">
-                    <Building2 className="w-8 h-8" />
+                <div className="flex justify-center mb-8">
+                    <img src={logo} alt="SecureCMS" className="h-28 w-auto object-contain" />
                 </div>
                 <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">
                     Setup your Organization

@@ -10,6 +10,7 @@ import {
 import { purposeApi, Purpose } from '../api/purposeApi';
 import { dataCatalogApi, DataCatalogEntry } from '../api/dataCatalogApi';
 import toast from 'react-hot-toast';
+import { CopyButton } from '../components/ui/CopyButton';
 
 const Purposes = () => {
     const [purposes, setPurposes] = useState<Purpose[]>([]);
@@ -181,9 +182,15 @@ const Purposes = () => {
                                 <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 text-emerald-500" />
                                 Active
                             </div>
-                            <span className="text-slate-400 font-bold">
-                                ID: {purpose.id.substring(0, 8)}...
-                            </span>
+                            <div className="flex items-center gap-1">
+                                <span
+                                    className="font-mono text-[10px] text-slate-400 font-bold"
+                                    title={purpose.id}
+                                >
+                                    {purpose.id.substring(0, 8)}…
+                                </span>
+                                <CopyButton text={purpose.id} iconSize={12} />
+                            </div>
                         </div>
                         </div>
                     ))

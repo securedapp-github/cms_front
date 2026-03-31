@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { Building2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/authApi';
+import logo from '../assets/img/STRIGHT.png';
 
 
 
@@ -68,12 +69,14 @@ const Login = () => {
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="flex justify-center">
-                    <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <Building2 className="w-8 h-8 text-white" />
-                    </div>
+                <div className="login-logo flex justify-center items-center mb-0">
+                    <img 
+                        src={logo} 
+                        alt="Secure CMS Logo" 
+                        className="h-[180px] w-auto object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.08)]" 
+                    />
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 tracking-tight">
+                <h2 className="login-title mt-[-40px] mb-2 text-center text-3xl font-extrabold text-slate-900 tracking-tight">
                     Sign in to your organization
                 </h2>
                 <p className="mt-2 text-center text-sm text-slate-600">
@@ -105,15 +108,6 @@ const Login = () => {
                                             onError={() => setError('Google Sign-In failed')}
                                         />
                                     </div>
-                                    <button
-                                        onClick={() => {
-                                            const baseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://cmsbe.securedapp.io';
-                                            window.location.href = `${baseUrl}/auth/google-login`;
-                                        }}
-                                        className="text-xs text-indigo-600 hover:text-indigo-500 font-medium transition-colors"
-                                    >
-                                        Trouble with the button? Try direct redirect
-                                    </button>
                                 </div>
 
                                 <div className="relative w-full">

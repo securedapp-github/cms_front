@@ -21,6 +21,7 @@ import {
     ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { CopyButton } from '../components/ui/CopyButton';
 
 const STATUS_CONFIG: Record<string, { label: string, color: string, icon: any }> = {
     pending: { label: 'Pending', color: 'blue', icon: Clock },
@@ -294,8 +295,14 @@ export default function DSRRequests() {
                                     return (
                                         <tr key={request.id} className="hover:bg-slate-50/80 transition-all group">
                                             <td className="px-8 py-6">
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs font-mono font-bold text-slate-400 opacity-60">#{request.id.substring(0, 8)}</span>
+                                                <div className="flex items-center gap-1.5">
+                                                    <span
+                                                        className="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md border border-slate-200"
+                                                        title={request.id}
+                                                    >
+                                                        #{request.id.substring(0, 8)}
+                                                    </span>
+                                                    <CopyButton text={request.id} iconSize={12} />
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
@@ -516,8 +523,14 @@ export default function DSRRequests() {
                                 </div>
                                 <div>
                                     <h3 className="text-2xl font-black text-slate-900 tracking-tight">Request Lifecycle</h3>
-                                    <div className="flex items-center mt-1">
-                                        <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest border border-indigo-100 px-2 py-0.5 rounded-lg bg-indigo-50">DSR-#{selectedRequest.id.substring(0, 12)}</span>
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                        <span
+                                            className="text-[10px] font-black text-indigo-500 uppercase tracking-widest border border-indigo-100 px-2 py-0.5 rounded-lg bg-indigo-50"
+                                            title={selectedRequest.id}
+                                        >
+                                            DSR-#{selectedRequest.id.substring(0, 12)}
+                                        </span>
+                                        <CopyButton text={selectedRequest.id} iconSize={12} />
                                     </div>
                                 </div>
                             </div>

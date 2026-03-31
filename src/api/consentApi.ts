@@ -3,7 +3,7 @@ import apiClient from './apiClient';
 export interface GrantConsentRequest {
     email: string;
     phone_number?: string;
-    purposeId: string;
+    purpose_ids: string[];
     policyVersionId: string;
 }
 

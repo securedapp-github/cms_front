@@ -4,6 +4,12 @@ import { Plus, Edit2, Trash2, AppWindow, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { appsApi, AppConfig } from '../../api/appsApi';
 import { AppModal } from '../../components/apps/AppModal';
+import { CopyButton } from '../../components/ui/CopyButton';
+
+const truncateId = (id: string) => {
+    if (!id) return '';
+    return id.length > 16 ? `${id.substring(0, 8)}…${id.slice(-4)}` : id;
+};
 
 export default function AppsList() {
     const { data, error, isLoading, mutate } = useSWR<{ apps: AppConfig[] }>('apps', appsApi.listApps);
@@ -94,6 +100,7 @@ export default function AppsList() {
                             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500">
                                 <tr>
                                     <th className="px-6 py-4 font-medium">App Name</th>
+                                    <th className="px-6 py-4 font-medium">App ID</th>
                                     <th className="px-6 py-4 font-medium">Slug</th>
                                     <th className="px-6 py-4 font-medium">Status</th>
                                     <th className="px-6 py-4 font-medium">Created Date</th>
@@ -104,6 +111,17 @@ export default function AppsList() {
                                 {apps.map((app) => (
                                     <tr key={app.id} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="px-6 py-4 font-semibold text-slate-900">{app.name}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-1.5">
+                                                <span
+                                                    className="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200"
+                                                    title={app.id}
+                                                >
+                                                    {truncateId(app.id)}
+                                                </span>
+                                                <CopyButton text={app.id} />
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-4 text-slate-600 font-mono text-xs">{app.slug}</td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${app.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>

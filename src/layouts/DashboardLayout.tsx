@@ -24,6 +24,7 @@ import useSWR from 'swr';
 import { appsApi } from '../api/appsApi';
 import { tenantApi } from '../api/tenantApi';
 import { useAppStore } from '../store/appStore';
+import logo from '../assets/img/STRIGHT.png';
 
 const DashboardLayout = () => {
     const { user, logout, tenantId, tenantMetadata, setTenantMetadata } = useAuthStore();
@@ -84,11 +85,12 @@ const DashboardLayout = () => {
         <div className="min-h-screen bg-slate-50 flex font-sans antialiased text-slate-900">
             {/* Sidebar */}
             <aside className="w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 z-50">
-                <div className="h-16 flex items-center px-6 border-b border-slate-200">
-                    <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center mr-3 shadow-sm shadow-indigo-200">
-                        <Building2 className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="font-bold text-lg text-slate-900 tracking-tight">SecureCMS</span>
+                <div className="h-14 flex items-center justify-center border-b border-slate-200 bg-white">
+                    <img 
+                        src={logo} 
+                        alt="SecureCMS Logo" 
+                        className="h-[140px] w-auto object-contain" 
+                    />
                 </div>
 
                 <nav className="flex-1 py-8 px-4 space-y-1">
