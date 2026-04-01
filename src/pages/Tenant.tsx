@@ -226,11 +226,19 @@ const Tenant = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">CIN</label>
-                                        <p className="text-sm font-bold text-slate-700 font-mono tracking-tight">{tenantData?.legal_info?.cin || 'Not Provided'}</p>
+                                        <p className="text-sm font-bold text-slate-700 font-mono tracking-tight">
+                                            {tenantData?.legal_info?.cin ? tenantData.legal_info.cin : (
+                                                <span className="text-muted">No CIN provided. Add details in profile settings.</span>
+                                            )}
+                                        </p>
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">GSTIN</label>
-                                        <p className="text-sm font-bold text-slate-700 font-mono tracking-tight">{tenantData?.legal_info?.gst || 'Not Provided'}</p>
+                                        <p className="text-sm font-bold text-slate-700 font-mono tracking-tight">
+                                            {tenantData?.legal_info?.gst ? tenantData.legal_info.gst : (
+                                                <span className="text-muted">No GSTIN provided. Add details in profile settings.</span>
+                                            )}
+                                        </p>
                                     </div>
                                 </div>
                             )}
@@ -297,7 +305,9 @@ const Tenant = () => {
                                                 {tenantData.address.city}, {tenantData.address.state} {tenantData.address.postal_code}<br />
                                                 {tenantData.address.country}
                                             </>
-                                        ) : 'No address specified'}
+                                        ) : (
+                                            <span className="text-muted">No address specified. Add your business address in settings.</span>
+                                        )}
                                     </div>
                                 </div>
                             )}

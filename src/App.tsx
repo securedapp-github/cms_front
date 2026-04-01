@@ -55,7 +55,6 @@ function App() {
               <Route path="/api-keys" element={<APIKeys />} />
               <Route path="/tenant" element={<Tenant />} />
               <Route path="/webhooks" element={<Webhooks />} />
-              <Route path="/dsr" element={<DSRRequests />} />
               <Route path="/apps" element={<Apps />} />
               <Route path="/data-catalog" element={<DataCatalog />} />
             </Route>

@@ -70,16 +70,12 @@ const DashboardLayout = () => {
         { label: 'Clients', path: '/clients', icon: Users },
         { label: 'Data Catalog', path: '/data-catalog', icon: Database },
         { label: 'Webhooks', path: '/webhooks', icon: Webhook },
-        { label: 'DSR Requests', path: '/dsr', icon: UserCircle },
         { label: 'Audit Logs', path: '/audit-logs', icon: History },
         { label: 'API Keys', path: '/api-keys', icon: Key },
         { label: 'Tenant Profile', path: '/tenant', icon: Settings },
     ];
 
-    const getPageTitle = () => {
-        const currentItem = navItems.find(item => item.path === location.pathname);
-        return currentItem ? currentItem.label : 'Overview';
-    };
+
 
     return (
         <div className="min-h-screen bg-slate-50 flex font-sans antialiased text-slate-900">
@@ -145,9 +141,7 @@ const DashboardLayout = () => {
                 {/* Top Header */}
                 <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-40">
                     <div className="flex items-center space-x-3">
-                        <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-                            {getPageTitle()}
-                        </h1>
+                        {/* Title removed */}
                     </div>
 
                     <div className="flex items-center space-x-5">
@@ -188,7 +182,7 @@ const DashboardLayout = () => {
                 </header>
 
                 {/* Page Content */}
-                <main className="flex-1 p-8 overflow-y-auto">
+                <main className="flex-1 pt-4 px-8 pb-8 overflow-y-auto">
                     <Outlet />
                 </main>
             </div>
