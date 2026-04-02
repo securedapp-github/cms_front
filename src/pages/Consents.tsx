@@ -37,7 +37,7 @@ const Consents = () => {
     const [consents, setConsents] = useState<ConsentRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedConsent, setSelectedConsent] = useState<ConsentRecord | null>(null);
-    const [isWithdrawing, setIsWithdrawing] = useState(false);
+
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All Statuses');
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -199,20 +199,7 @@ const Consents = () => {
         setDevOtp('');
     };
 
-    const handleWithdraw = async () => {
-        if (!selectedConsent || !selectedAppId) return;
-        try {
-            setIsWithdrawing(true);
-            await consentApi.withdrawConsent(selectedAppId, selectedConsent.userId, selectedConsent.purposeId);
-            toast.success('Consent withdrawn successfully');
-            setSelectedConsent(null);
-            fetchConsents();
-        } catch (error) {
-            toast.error('Failed to withdraw consent');
-        } finally {
-            setIsWithdrawing(false);
-        }
-    };
+
 
     const filteredConsents = consents.filter(c => {
         const matchesSearch = c.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -278,8 +265,8 @@ const Consents = () => {
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >
                         <option>All Statuses</option>
-                        <option>Granted</option>
-                        <option>Withdrawn</option>
+                        <option>Active</option>
+                        <option>Expired</option>
                     </select>
                     <button
                         onClick={resetFilters}
@@ -321,9 +308,16 @@ const Consents = () => {
                                 </tr>
                             ) : filteredConsents.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center">
-                                        <ShieldAlert className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                                        <p className="text-sm text-slate-500 font-medium">No consent records found.</p>
+                                    <td colSpan={5} className="px-6 py-20 text-center">
+                                        <div className="flex flex-col items-center justify-center space-y-4">
+                                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+                                                <ShieldAlert className="w-8 h-8" />
+                                            </div>
+                                            <div className="max-w-xs mx-auto">
+                                                <p className="text-slate-900 font-bold text-lg">No consents available</p>
+                                                <p className="text-slate-500 text-sm mt-1">You haven’t given any consent yet. Start by connecting with an application.</p>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : (
@@ -358,7 +352,7 @@ const Consents = () => {
                                                     : 'bg-amber-50 text-amber-700 border-amber-100'
                                                 }`}>
                                                 {consent.currentStatus === 'granted' && <ShieldCheck className="w-3 h-3 mr-1" />}
-                                                <span className="capitalize">{consent.currentStatus}</span>
+                                                <span className="capitalize">{consent.currentStatus === 'granted' ? 'Active' : consent.currentStatus}</span>
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
@@ -414,7 +408,7 @@ const Consents = () => {
                                                 ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
                                                 : 'bg-amber-100 text-amber-700 border-amber-200'
                                             }`}>
-                                            {selectedConsent.currentStatus.toUpperCase()}
+                                            {selectedConsent.currentStatus === 'granted' ? 'ACTIVE' : selectedConsent.currentStatus.toUpperCase()}
                                         </span>
                                     </div>
                                     <div className="h-px bg-slate-200"></div>
@@ -503,42 +497,12 @@ const Consents = () => {
                                     </div>
                                 </div>
 
-                                {/* Info Box */}
-                                <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex gap-3">
-                                    <div className="mt-0.5">
-                                        <RotateCcw className="w-4 h-4 text-indigo-600" />
-                                    </div>
-                                    <p className="text-xs text-indigo-700 leading-relaxed font-medium">
-                                        Withdrawing consent will invalidate future data processing for this purpose.
-                                        Past processing activities remain recorded in the audit trail.
-                                    </p>
-                                </div>
+
                             </div>
                         );
                     })()}
 
-                    <div className="p-6 bg-slate-50 border-t border-slate-100">
-                        {selectedConsent.currentStatus === 'granted' ? (
-                            <button
-                                onClick={handleWithdraw}
-                                disabled={isWithdrawing}
-                                className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-slate-200 flex items-center justify-center"
-                            >
-                                {isWithdrawing ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        Withdrawing...
-                                    </>
-                                ) : (
-                                    'Withdraw Consent'
-                                )}
-                            </button>
-                        ) : (
-                            <div className="w-full py-3 bg-slate-100 text-slate-400 font-bold rounded-xl text-center cursor-not-allowed border border-slate-200">
-                                Already Withdrawn
-                            </div>
-                        )}
-                    </div>
+
                 </div>
             )}
 

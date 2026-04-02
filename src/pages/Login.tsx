@@ -20,16 +20,6 @@ const Login = () => {
         try {
             const token = credentialResponse.credential;
 
-            if (token === 'mock_demo_credential') {
-                // Fallback for Demo User button
-                loginWithOnboarding(
-                    token,
-                    { name: "Demo User", email: "demo@example.com" }
-                );
-                navigate('/onboarding');
-                return;
-            }
-
             // Call backend API to exchange Google token for application JWT
             // Note: Update authApi typings to include `onboarding`, `email`, `name`, `tenant_id`, `client_id`
             const response: any = await authApi.loginWithGoogle({ googleToken: token });
@@ -109,22 +99,6 @@ const Login = () => {
                                         />
                                     </div>
                                 </div>
-
-                                <div className="relative w-full">
-                                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                        <div className="w-full border-t border-slate-100"></div>
-                                    </div>
-                                    <div className="relative flex justify-center text-xs uppercase">
-                                        <span className="bg-white px-2 text-slate-400 font-medium">Or test flow</span>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={() => handleGoogleSuccess({ credential: 'mock_demo_credential' })}
-                                    className="w-full flex items-center justify-center px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
-                                >
-                                    Continue as Demo User
-                                </button>
                             </>
                         )}
                     </div>
