@@ -18,7 +18,8 @@ import {
     History,
     Info,
     Download,
-    ChevronRight
+    ChevronRight,
+    AppWindow
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { CopyButton } from '../components/ui/CopyButton';
@@ -48,6 +49,7 @@ export default function DSRRequests() {
     const { selectedAppId } = useAppStore();
     const [requests, setRequests] = useState<DSRRequest[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<DSRRequest | null>(null);
@@ -71,12 +73,18 @@ export default function DSRRequests() {
     }, [selectedAppId]);
 
     const fetchRequests = async () => {
-        if (!selectedAppId) return;
+        if (!selectedAppId) {
+            setLoading(false);
+            setRequests([]);
+            return;
+        }
         try {
             setLoading(true);
+            setError(null);
             const data = await dsrApi.getDsrRequests(selectedAppId);
             setRequests(data);
-        } catch (error) {
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'Failed to fetch DSR requests');
             toast.error('Failed to fetch DSR requests');
         } finally {
             setLoading(false);
@@ -197,6 +205,26 @@ export default function DSRRequests() {
 
     const stats = getStats();
 
+    if (!selectedAppId) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 animate-in fade-in duration-500">
+                <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center border border-indigo-100 shadow-sm">
+                    <AppWindow className="w-10 h-10 text-indigo-500" />
+                </div>
+                <div className="text-center">
+                    <h2 className="text-xl font-bold text-slate-900">No Application Selected</h2>
+                    <p className="text-slate-500 max-w-sm mt-2 font-medium">Please select an application from the managed app selector in the header to view its DSR requests.</p>
+                </div>
+                <button 
+                    onClick={() => window.location.href = '/apps'}
+                    className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-100"
+                >
+                    Manage Applications
+                </button>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Page Header */}
@@ -276,6 +304,22 @@ export default function DSRRequests() {
                                     <td colSpan={6} className="px-8 py-20 text-center">
                                         <Loader2 className="w-10 h-10 animate-spin mx-auto text-indigo-600 mb-4 opacity-50" />
                                         <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Synchronizing data...</p>
+                                    </td>
+                                </tr>
+                             ) : error ? (
+                                <tr>
+                                    <td colSpan={6} className="px-8 py-20 text-center">
+                                        <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-100">
+                                            <AlertCircle className="w-10 h-10 text-red-500" />
+                                        </div>
+                                        <p className="text-lg font-bold text-slate-900">Failed to load requests</p>
+                                        <p className="text-sm text-slate-500 mt-2 mb-6">{error}</p>
+                                        <button 
+                                            onClick={fetchRequests}
+                                            className="px-6 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-all uppercase tracking-widest"
+                                        >
+                                            Retry Synchronizing
+                                        </button>
                                     </td>
                                 </tr>
                             ) : requests.length === 0 ? (

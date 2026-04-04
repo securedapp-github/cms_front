@@ -18,7 +18,8 @@ import {
     Key,
     AppWindow,
     Database,
-    Globe
+    Globe,
+    MessageSquare
 } from 'lucide-react';
 import useSWR from 'swr';
 import { appsApi } from '../api/appsApi';
@@ -51,8 +52,13 @@ const DashboardLayout = () => {
 
     // Set default app if none selected and apps exist
     useEffect(() => {
-        if (!selectedAppId && apps.length > 0) {
-            setSelectedAppId(apps[0].id);
+        if (apps.length > 0) {
+            const isValid = apps.some(app => app.id === selectedAppId);
+            if (!selectedAppId || !isValid) {
+                setSelectedAppId(apps[0].id);
+            }
+        } else if (selectedAppId) {
+            setSelectedAppId(null);
         }
     }, [apps, selectedAppId, setSelectedAppId]);
 
@@ -70,6 +76,7 @@ const DashboardLayout = () => {
         { label: 'Clients', path: '/clients', icon: Users },
         { label: 'Data Catalog', path: '/data-catalog', icon: Database },
         { label: 'Webhooks', path: '/webhooks', icon: Webhook },
+        { label: 'DSR Requests', path: '/dsr-requests', icon: MessageSquare },
         { label: 'Audit Logs', path: '/audit-logs', icon: History },
         { label: 'API Keys', path: '/api-keys', icon: Key },
         { label: 'Tenant Profile', path: '/tenant', icon: Settings },

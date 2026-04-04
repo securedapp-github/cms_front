@@ -57,6 +57,7 @@ function App() {
               <Route path="/webhooks" element={<Webhooks />} />
               <Route path="/apps" element={<Apps />} />
               <Route path="/data-catalog" element={<DataCatalog />} />
+              <Route path="/dsr-requests" element={<DSRRequests />} />
             </Route>
           </Route>
         </Routes>
