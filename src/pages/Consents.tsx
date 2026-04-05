@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     Search,
     RotateCcw,
@@ -28,12 +28,13 @@ interface ConsentRecord {
     purposeName: string;
     policyVersion: string;
     currentStatus: 'granted' | 'withdrawn';
+    status: 'ACTIVE' | 'REVOKED' | 'EXPIRED'; // API now returns this
     updatedAt: string;
 }
 
 const Consents = () => {
     const { selectedAppId } = useAppStore();
-    const { mutate: globalMutate } = useSWRConfig();
+    const queryClient = useQueryClient();
     
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All Statuses');
@@ -56,29 +57,34 @@ const Consents = () => {
     const [devOtp, setDevOtp] = useState('');
 
     // Fetch Lookup Data
-    const { data: purposes = [] } = useSWR(
-        selectedAppId ? ['purposes', selectedAppId] : null,
-        () => purposeApi.getPurposes()
-    );
-    const { data: policies = [] } = useSWR(
-        selectedAppId ? ['policies', selectedAppId] : null,
-        () => policyApi.getPolicyVersions(selectedAppId!)
-    );
+    const { data: purposes = [] } = useQuery({
+        queryKey: ['purposes', selectedAppId],
+        queryFn: () => purposeApi.getPurposes(),
+        enabled: !!selectedAppId
+    });
+    
+    const { data: policies = [] } = useQuery({
+        queryKey: ['policies', selectedAppId],
+        queryFn: () => policyApi.getPolicyVersions(selectedAppId!),
+        enabled: !!selectedAppId
+    });
 
     const isEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
     
-    const { data: consents = [], isLoading, mutate } = useSWR(
-        selectedAppId ? ['consents', selectedAppId, searchTerm] : null,
-        async ([_, appId, search]) => {
+    const { data: consents = [], isLoading } = useQuery({
+        queryKey: ['admin-consents', selectedAppId, searchTerm],
+        queryFn: async () => {
             const params: any = {};
-            if (isEmail(search)) {
-                params.email = search;
-            } else if (search.length > 30) { // Likely a hash
-                params.identity_hash = search;
+            if (isEmail(searchTerm)) {
+                params.email = searchTerm;
+            } else if (searchTerm.length > 30) { // Likely a hash
+                params.identity_hash = searchTerm;
             }
-            return consentApi.getAllConsents(appId, params);
-        }
-    );
+            return consentApi.getAllConsents(selectedAppId!, params);
+        },
+        enabled: !!selectedAppId,
+        refetchInterval: 5000 // Polling every 5 seconds for real-time updates
+    });
 
     const handleOpenCreateModal = () => {
         const activePolicies = policies.filter((v: PolicyVersion) => v.isActive);
@@ -165,7 +171,7 @@ const Consents = () => {
                 toast.success('Consent recorded successfully');
                 setShowCreateModal(false);
                 resetCreateForm();
-                mutate(); // Refresh the consent list
+                queryClient.invalidateQueries({ queryKey: ['admin-consents'] }); // Force immediate partial refresh
             }
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Invalid OTP');
@@ -187,7 +193,7 @@ const Consents = () => {
     const filteredConsents = consents.filter((c: ConsentRecord) => {
         // Since we now have server-side search for email/hash, 
         // we only need local filtering for status and purpose name.
-        const matchesStatus = statusFilter === 'All Statuses' || c.currentStatus === statusFilter.toLowerCase();
+        const matchesStatus = statusFilter === 'All Statuses' || (c.status || '').toLowerCase() === statusFilter.toLowerCase();
         const matchesPurpose = c.purposeName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                c.userId.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesStatus && matchesPurpose;
@@ -332,12 +338,15 @@ const Consents = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${consent.currentStatus === 'granted'
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                                                consent.status === 'ACTIVE'
                                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                                                    : 'bg-amber-50 text-amber-700 border-amber-100'
+                                                    : consent.status === 'REVOKED'
+                                                    ? 'bg-rose-50 text-rose-700 border-rose-100'
+                                                    : 'bg-slate-50 text-slate-700 border-slate-100'
                                                 }`}>
-                                                {consent.currentStatus === 'granted' && <ShieldCheck className="w-3 h-3 mr-1" />}
-                                                <span className="capitalize">{consent.currentStatus === 'granted' ? 'Active' : consent.currentStatus}</span>
+                                                {consent.status === 'ACTIVE' && <ShieldCheck className="w-3 h-3 mr-1" />}
+                                                <span className="capitalize">{consent.status.toLowerCase()}</span>
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
@@ -389,11 +398,14 @@ const Consents = () => {
                                 <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-4">
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-bold text-slate-500">Current Status</span>
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${selectedConsent.currentStatus === 'granted'
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                                            selectedConsent.status === 'ACTIVE'
                                                 ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                                                : 'bg-amber-100 text-amber-700 border-amber-200'
+                                                : selectedConsent.status === 'REVOKED'
+                                                ? 'bg-rose-100 text-rose-700 border-rose-200'
+                                                : 'bg-slate-100 text-slate-700 border-slate-200'
                                             }`}>
-                                            {selectedConsent.currentStatus === 'granted' ? 'ACTIVE' : selectedConsent.currentStatus.toUpperCase()}
+                                            {selectedConsent.status}
                                         </span>
                                     </div>
                                     <div className="h-px bg-slate-200"></div>
