@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import useSWR from 'swr';
 import {
     Plus,
     Shield,
@@ -13,9 +14,12 @@ import toast from 'react-hot-toast';
 import { CopyButton } from '../components/ui/CopyButton';
 
 const Purposes = () => {
-    const [purposes, setPurposes] = useState<Purpose[]>([]);
-    const [catalog, setCatalog] = useState<DataCatalogEntry[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: purposes = [], isLoading: loadingPurposes, mutate: mutatePurposes } = useSWR('purposes', () => purposeApi.getPurposes());
+    const { data: catalogResponse, isLoading: loadingCatalog } = useSWR('data-catalog', () => dataCatalogApi.listCatalog());
+    
+    const catalog = catalogResponse?.data || [];
+    const loading = loadingPurposes || loadingCatalog;
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
@@ -27,32 +31,6 @@ const Purposes = () => {
         validity_days: '' as any
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    useEffect(() => {
-        fetchPurposes();
-        fetchCatalog();
-    }, []);
-
-    const fetchCatalog = async () => {
-        try {
-            const response = await dataCatalogApi.listCatalog();
-            setCatalog(response.data);
-        } catch (error) {
-            console.error('Failed to fetch catalog:', error);
-        }
-    };
-
-    const fetchPurposes = async () => {
-        try {
-            setLoading(true);
-            const data = await purposeApi.getPurposes();
-            setPurposes(data);
-        } catch (error) {
-            toast.error('Failed to fetch purposes');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,7 +46,7 @@ const Purposes = () => {
                 required_data: [], 
                 validity_days: '' as any
             });
-            fetchPurposes();
+            mutatePurposes();
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Failed to create purpose');
         } finally {
@@ -82,7 +60,7 @@ const Purposes = () => {
             setIsDeleting(id);
             await purposeApi.deletePurpose(id);
             toast.success('Purpose deleted successfully');
-            fetchPurposes();
+            mutatePurposes();
         } catch (error) {
             toast.error('Failed to delete purpose');
         } finally {

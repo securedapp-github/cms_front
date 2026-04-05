@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import useSWR from 'swr';
 import {
     Plus,
     FileText,
@@ -16,8 +17,11 @@ import { CopyButton } from '../components/ui/CopyButton';
 
 const PolicyVersions = () => {
     const { selectedAppId } = useAppStore();
-    const [policies, setPolicies] = useState<PolicyVersion[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: policies = [], isLoading: loading, mutate } = useSWR(
+        selectedAppId ? ['policies', selectedAppId] : null,
+        ([_, appId]) => policyApi.getPolicyVersions(appId)
+    );
+    
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedPolicy, setSelectedPolicy] = useState<PolicyVersion | null>(null);
@@ -25,25 +29,6 @@ const PolicyVersions = () => {
         version: '',
         policy_text: ''
     });
-
-    useEffect(() => {
-        if (selectedAppId) {
-            fetchPolicies();
-        }
-    }, [selectedAppId]);
-
-    const fetchPolicies = async () => {
-        if (!selectedAppId) return;
-        try {
-            setLoading(true);
-            const data = await policyApi.getPolicyVersions(selectedAppId);
-            setPolicies(data);
-        } catch (error) {
-            toast.error('Failed to fetch policy versions');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,7 +42,7 @@ const PolicyVersions = () => {
             toast.success('New policy version published!');
             setIsModalOpen(false);
             setFormData({ version: '', policy_text: '' });
-            fetchPolicies();
+            mutate();
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Failed to publish policy');
         } finally {

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import useSWR, { useSWRConfig } from 'swr';
 import {
     Search,
     RotateCcw,
@@ -14,7 +15,6 @@ import {
     ShieldAlert,
     User
 } from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
 import { useAppStore } from '../store/appStore';
 import { consentApi } from '../api/consentApi';
 import { purposeApi, Purpose } from '../api/purposeApi';
@@ -33,16 +33,12 @@ interface ConsentRecord {
 
 const Consents = () => {
     const { selectedAppId } = useAppStore();
-    const { } = useAuthStore();
-    const [consents, setConsents] = useState<ConsentRecord[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedConsent, setSelectedConsent] = useState<ConsentRecord | null>(null);
-
+    const { mutate: globalMutate } = useSWRConfig();
+    
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All Statuses');
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [purposes, setPurposes] = useState<Purpose[]>([]);
-    const [policies, setPolicies] = useState<PolicyVersion[]>([]);
+    const [selectedConsent, setSelectedConsent] = useState<ConsentRecord | null>(null);
     const [isCreating, setIsCreating] = useState(false);
 
     // Create form state
@@ -59,44 +55,33 @@ const Consents = () => {
     const [otpCode, setOtpCode] = useState('');
     const [devOtp, setDevOtp] = useState('');
 
-    useEffect(() => {
-        if (selectedAppId) {
-            fetchConsents();
-            fetchLookupData();
+    // Fetch Lookup Data
+    const { data: purposes = [] } = useSWR(
+        selectedAppId ? ['purposes', selectedAppId] : null,
+        () => purposeApi.getPurposes()
+    );
+    const { data: policies = [] } = useSWR(
+        selectedAppId ? ['policies', selectedAppId] : null,
+        () => policyApi.getPolicyVersions(selectedAppId!)
+    );
+
+    const isEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+    
+    const { data: consents = [], isLoading, mutate } = useSWR(
+        selectedAppId ? ['consents', selectedAppId, searchTerm] : null,
+        async ([_, appId, search]) => {
+            const params: any = {};
+            if (isEmail(search)) {
+                params.email = search;
+            } else if (search.length > 30) { // Likely a hash
+                params.identity_hash = search;
+            }
+            return consentApi.getAllConsents(appId, params);
         }
-    }, [selectedAppId]);
-
-    const fetchLookupData = async () => {
-        if (!selectedAppId) return;
-        try {
-            const [pData, vData] = await Promise.all([
-                purposeApi.getPurposes(),
-                policyApi.getPolicyVersions(selectedAppId)
-            ]);
-            setPurposes(pData);
-            setPolicies(vData);
-        } catch (error) {
-            console.error('Failed to fetch lookups:', error);
-        }
-    };
-
-    const fetchConsents = async () => {
-        if (!selectedAppId) return;
-        try {
-            setLoading(true);
-            const data = await consentApi.getAllConsents(selectedAppId);
-            setConsents(data);
-        } catch (error) {
-            toast.error('Failed to fetch consents');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
+    );
 
     const handleOpenCreateModal = () => {
-        const activePolicies = policies.filter(v => v.isActive);
+        const activePolicies = policies.filter((v: PolicyVersion) => v.isActive);
         if (activePolicies.length > 0 && !newConsentPolicyId) {
             setNewConsentPolicyId(activePolicies[0].id);
         }
@@ -180,7 +165,7 @@ const Consents = () => {
                 toast.success('Consent recorded successfully');
                 setShowCreateModal(false);
                 resetCreateForm();
-                fetchConsents();
+                mutate(); // Refresh the consent list
             }
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Invalid OTP');
@@ -199,13 +184,13 @@ const Consents = () => {
         setDevOtp('');
     };
 
-
-
-    const filteredConsents = consents.filter(c => {
-        const matchesSearch = c.userId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            c.purposeName.toLowerCase().includes(searchTerm.toLowerCase());
+    const filteredConsents = consents.filter((c: ConsentRecord) => {
+        // Since we now have server-side search for email/hash, 
+        // we only need local filtering for status and purpose name.
         const matchesStatus = statusFilter === 'All Statuses' || c.currentStatus === statusFilter.toLowerCase();
-        return matchesSearch && matchesStatus;
+        const matchesPurpose = c.purposeName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                               c.userId.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesStatus && matchesPurpose;
     });
 
     const resetFilters = () => {
@@ -299,7 +284,7 @@ const Consents = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {loading ? (
+                            {isLoading ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-12 text-center">
                                         <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-2" />

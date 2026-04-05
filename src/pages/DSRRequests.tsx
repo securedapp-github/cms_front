@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import useSWR from 'swr';
 import { dsrApi, DSRRequest, DSRTimelineEntry } from '../api/dsrApi';
 import {
     Plus,
@@ -47,9 +48,15 @@ import { useAppStore } from '../store/appStore';
 
 export default function DSRRequests() {
     const { selectedAppId } = useAppStore();
-    const [requests, setRequests] = useState<DSRRequest[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    
+    // Fetch DSR Requests
+    const { data: requests = [], isLoading: loading, error: swrError, mutate } = useSWR(
+        selectedAppId ? ['dsr', selectedAppId] : null,
+        ([_, appId]) => dsrApi.getDsrRequests(appId)
+    );
+    
+    const error = swrError?.response?.data?.error || null;
+
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<DSRRequest | null>(null);
@@ -66,31 +73,6 @@ export default function DSRRequests() {
     const [metadataJSON, setMetadataJSON] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
 
-    useEffect(() => {
-        if (selectedAppId) {
-            fetchRequests();
-        }
-    }, [selectedAppId]);
-
-    const fetchRequests = async () => {
-        if (!selectedAppId) {
-            setLoading(false);
-            setRequests([]);
-            return;
-        }
-        try {
-            setLoading(true);
-            setError(null);
-            const data = await dsrApi.getDsrRequests(selectedAppId);
-            setRequests(data);
-        } catch (err: any) {
-            setError(err.response?.data?.error || 'Failed to fetch DSR requests');
-            toast.error('Failed to fetch DSR requests');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedAppId) {
@@ -104,12 +86,12 @@ export default function DSRRequests() {
         
         try {
             setIsCreating(true);
-            const response = await dsrApi.createDsrRequest(selectedAppId, { user_id: userId, type });
+            await dsrApi.createDsrRequest(selectedAppId, { user_id: userId, type });
             
             toast.success('DSR Request created successfully');
             setShowCreateModal(false);
             setUserId('');
-            fetchRequests();
+            mutate();
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Failed to create request');
         } finally {
@@ -156,7 +138,7 @@ export default function DSRRequests() {
             await dsrApi.updateDsrStatus(selectedAppId, selectedRequest.id, { status: newStatus, metadata: meta });
             toast.success('Status updated successfully');
             setShowUpdateModal(false);
-            fetchRequests();
+            mutate();
             if (selectedRequest) {
                 const updated = await dsrApi.getDsrStatus(selectedAppId, selectedRequest.id);
                 setSelectedRequest(updated.dsr);
@@ -315,7 +297,7 @@ export default function DSRRequests() {
                                         <p className="text-lg font-bold text-slate-900">Failed to load requests</p>
                                         <p className="text-sm text-slate-500 mt-2 mb-6">{error}</p>
                                         <button 
-                                            onClick={fetchRequests}
+                                            onClick={() => mutate()}
                                             className="px-6 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-all uppercase tracking-widest"
                                         >
                                             Retry Synchronizing

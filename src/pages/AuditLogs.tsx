@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import {
     Search,
     Filter,
@@ -33,37 +34,20 @@ interface Pagination {
 }
 
 const AuditLogs = () => {
-    const [logs, setLogs] = useState<AuditLog[]>([]);
-    const [pagination, setPagination] = useState<Pagination | null>(null);
-    const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [actionFilter, setActionFilter] = useState('');
 
-    useEffect(() => {
-        fetchLogs();
-    }, [page, actionFilter]);
+    const { data: response, isLoading: loading } = useSWR(
+        ['audit-logs', page, actionFilter],
+        () => auditApi.getAuditLogs({
+            page,
+            limit: 10,
+            action: actionFilter || undefined
+        })
+    );
 
-    const fetchLogs = async () => {
-        try {
-            setLoading(true);
-            const response: any = await auditApi.getAuditLogs({
-                page,
-                limit: 10,
-                action: actionFilter || undefined
-            });
-            
-            console.log("Audit Logs API Response:", response);
-            
-            // The exact response structure depends on the API implementation
-            // Based on backend audit.controller.js, it returns { logs, pagination }
-            setLogs(response.logs || []);
-            setPagination(response.pagination || null);
-        } catch (error) {
-            toast.error('Failed to fetch audit logs');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const logs: AuditLog[] = response?.logs || [];
+    const pagination: Pagination | null = response?.pagination || null;
 
 
     const getActionColor = (action: string) => {

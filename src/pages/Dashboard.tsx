@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import {
     Users,
     ShieldCheck,
@@ -12,30 +12,11 @@ import { auditApi } from '../api/auditApi';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {
-    const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [activities, setActivities] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                setLoading(true);
-                const [statsData, auditData] = await Promise.all([
-                    dashboardApi.getDashboardStats(),
-                    auditApi.getAuditLogs({ limit: 5 })
-                ]);
-                setStats(statsData);
-                setActivities(auditData.logs || []);
-            } catch (error) {
-                console.error("Failed to fetch dashboard data:", error);
-                toast.error("Failed to load dashboard data");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDashboardData();
-    }, []);
+    const { data: stats, isLoading: loadingStats } = useSWR<DashboardStats>('dashboard-stats', () => dashboardApi.getDashboardStats());
+    const { data: auditData, isLoading: loadingAudit } = useSWR('recent-activity', () => auditApi.getAuditLogs({ limit: 5 }));
+    
+    const activities = auditData?.logs || [];
+    const loading = loadingStats || loadingAudit;
 
     const metricsList = [
         {
@@ -168,7 +149,7 @@ const Dashboard = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                activities.map((activity, i) => (
+                                activities.map((activity: any, i: number) => (
                                     <tr key={activity.id || i} className="hover:bg-slate-50/80 transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center">

@@ -23,8 +23,8 @@ export const consentApi = {
         const response = await apiClient.get<{ consents: Consent[] }>(`/tenant/apps/${appId}/consent/${userId}`);
         return response.data.consents;
     },
-    getAllConsents: async (appId: string) => {
-        const response = await apiClient.get<{ consents: any[] }>(`/tenant/apps/${appId}/consents`);
+    getAllConsents: async (appId: string, params?: { email?: string; identity_hash?: string }) => {
+        const response = await apiClient.get<{ consents: any[] }>(`/tenant/apps/${appId}/consents`, { params });
         return response.data.consents;
     },
     withdrawConsent: async (appId: string, userId: string, purposeId: string) => {

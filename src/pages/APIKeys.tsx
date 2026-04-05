@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import useSWR from 'swr';
 import {
     Plus,
     Key,
@@ -7,39 +8,18 @@ import {
     Calendar,
     Shield,
     AlertCircle,
-    Copy,
-    CheckCircle2,
     Loader2
 } from 'lucide-react';
 import { tenantApi, ApiKey as ApiKeyData } from '../api/tenantApi';
 import toast from 'react-hot-toast';
 
 const APIKeys = () => {
+    const { data: apiKeys = [], error, isLoading, mutate } = useSWR('api-keys', () => tenantApi.listApiKeys());
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [copiedId, setCopiedId] = useState<string | null>(null);
     const [copiedNewKey, setCopiedNewKey] = useState(false);
-    const [apiKeys, setApiKeys] = useState<ApiKeyData[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
     const [newKeyData, setNewKeyData] = useState({ name: '' });
     const [createdKey, setCreatedKey] = useState<string | null>(null);
-
-    const fetchKeys = async () => {
-        setIsLoading(true);
-        try {
-            const keys = await tenantApi.listApiKeys();
-            setApiKeys(keys);
-        } catch (error) {
-            console.error("Failed to fetch API keys:", error);
-            toast.error("Failed to load API keys.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchKeys();
-    }, []);
 
     const handleCreateKey = async () => {
         setIsCreating(true);
@@ -51,7 +31,7 @@ const APIKeys = () => {
             toast.success("API Key created. Copy it now; it will not be shown again.");
             setIsModalOpen(false);
             setNewKeyData({ name: '' });
-            fetchKeys();
+            mutate(); // Refresh the list
         } catch (error: any) {
             toast.error(error?.response?.data?.message || "Failed to create API key.");
         } finally {
@@ -65,21 +45,11 @@ const APIKeys = () => {
         try {
             await tenantApi.revokeApiKey(id);
             toast.success("API Key revoked successfully.");
-            setApiKeys(prev => prev.filter(k => k.id !== id));
+            mutate(); // Refresh the list
         } catch (error: any) {
             console.error("Failed to revoke API key:", error);
             toast.error(error?.response?.data?.message || "Failed to revoke API key.");
         }
-    };
-
-    const handleCopy = (key: ApiKeyData) => {
-        if (!key.key) {
-            toast.error("Full key is not available for existing keys. Create/rotate a key to copy full value once.");
-            return;
-        }
-        navigator.clipboard.writeText(key.key);
-        setCopiedId(key.id);
-        setTimeout(() => setCopiedId(null), 2000);
     };
 
     const handleCopyCreatedKey = () => {
@@ -138,7 +108,6 @@ const APIKeys = () => {
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
                                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Key Name</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">API Key</th>
                                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Created Date</th>
                                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Expiry Date</th>
                                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
@@ -148,14 +117,14 @@ const APIKeys = () => {
                         <tbody className="divide-y divide-slate-100">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-sm text-slate-500">
+                                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">
                                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
                                         Loading API Keys...
                                     </td>
                                 </tr>
                             ) : apiKeys.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-8 text-center text-sm text-slate-500">
+                                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-slate-500">
                                         No API Keys registered yet.
                                     </td>
                                 </tr>
@@ -168,18 +137,6 @@ const APIKeys = () => {
                                                     <Key className="w-4 h-4 text-slate-500 group-hover:text-indigo-600" />
                                                 </div>
                                                 <span className="text-sm font-bold text-slate-900">{key.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center space-x-2">
-                                                <code className="text-xs font-mono font-bold text-slate-500">{key.keyMasked || '...'}</code>
-                                                <button
-                                                    onClick={() => handleCopy(key)}
-                                                    className="text-slate-300 hover:text-indigo-600 transition-colors"
-                                                    title={key.key ? 'Copy full key' : 'Full key unavailable for old keys'}
-                                                >
-                                                    {copiedId === key.id ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                                                </button>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-sm font-bold text-slate-700">{key.createdDate}</td>

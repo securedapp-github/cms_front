@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import useSWR, { useSWRConfig } from 'swr';
 import { webhookApi, Webhook } from '../api/webhookApi';
 import {
     Trash2,
@@ -20,12 +21,14 @@ const EVENT_OPTIONS = [
     { id: 'consent.withdrawn', label: 'consent.withdrawn' },
     { id: 'policy.updated', label: 'policy.updated' },
     { id: 'purpose.created', label: 'purpose.created' },
+    { id: 'dsr.created', label: 'dsr.created' },
     { id: 'dsr.completed', label: 'dsr.completed' },
+
 ];
 
 export default function Webhooks() {
-    const [webhooks, setWebhooks] = useState<Webhook[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { mutate } = useSWRConfig();
+    const { data: webhooks = [], error, isLoading, mutate: mutateThis } = useSWR('webhooks', () => webhookApi.getWebhooks());
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null);
     const [isCreating, setIsCreating] = useState(false);
@@ -33,22 +36,6 @@ export default function Webhooks() {
     // Form fields
     const [url, setUrl] = useState('');
     const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
-
-    useEffect(() => {
-        fetchWebhooks();
-    }, []);
-
-    const fetchWebhooks = async () => {
-        try {
-            setLoading(true);
-            const data = await webhookApi.getWebhooks();
-            setWebhooks(data);
-        } catch (error) {
-            toast.error('Failed to fetch webhooks');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleCreateWebhook = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,7 +55,7 @@ export default function Webhooks() {
             setShowCreateModal(false);
             setUrl('');
             setSelectedEvents([]);
-            fetchWebhooks();
+            mutateThis(); // Refetch webhooks
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Failed to create webhook');
         } finally {
@@ -82,7 +69,7 @@ export default function Webhooks() {
         try {
             await webhookApi.deleteWebhook(id);
             toast.success('Webhook deleted successfully');
-            setWebhooks(webhooks.filter(w => w.id !== id));
+            mutateThis(); // Refetch webhooks
             if (selectedWebhook?.id === id) setSelectedWebhook(null);
         } catch (error) {
             toast.error('Failed to delete webhook');
@@ -140,7 +127,7 @@ export default function Webhooks() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                            {loading ? (
+                            {isLoading ? (
                                 <tr>
                                     <td colSpan={6} className="px-8 py-20 text-center text-slate-500">
                                         <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-indigo-600" />

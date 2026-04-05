@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import useSWR from 'swr';
 import {
     UserPlus,
     MoreVertical,
@@ -15,29 +16,12 @@ import { clientApi, Client } from '../api/clientApi';
 import toast from 'react-hot-toast';
 
 const Clients = () => {
-    const [clients, setClients] = useState<Client[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: clients = [], isLoading: loading, mutate } = useSWR('clients', () => clientApi.getClients());
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteRole, setInviteRole] = useState('viewer');
     const [isInviting, setIsInviting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-
-    useEffect(() => {
-        fetchClients();
-    }, []);
-
-    const fetchClients = async () => {
-        try {
-            setLoading(true);
-            const data = await clientApi.getClients();
-            setClients(data);
-        } catch (error) {
-            toast.error('Failed to fetch clients');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleInvite = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,7 +31,7 @@ const Clients = () => {
             toast.success('Client invited successfully');
             setIsInviteModalOpen(false);
             setInviteEmail('');
-            fetchClients();
+            mutate();
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Failed to invite client');
         } finally {
