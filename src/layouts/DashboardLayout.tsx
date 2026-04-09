@@ -19,7 +19,8 @@ import {
     AppWindow,
     Database,
     Globe,
-    MessageSquare
+    MessageSquare,
+    CreditCard
 } from 'lucide-react';
 import useSWR from 'swr';
 import { appsApi } from '../api/appsApi';
@@ -79,6 +80,7 @@ const DashboardLayout = () => {
         { label: 'DSR Requests', path: '/dsr-requests', icon: MessageSquare },
         { label: 'Audit Logs', path: '/audit-logs', icon: History },
         { label: 'API Keys', path: '/api-keys', icon: Key },
+        { label: 'Pricing', path: '/pricing', icon: CreditCard },
         { label: 'Tenant Profile', path: '/tenant', icon: Settings },
     ];
 

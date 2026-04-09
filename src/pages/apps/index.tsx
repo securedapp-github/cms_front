@@ -68,7 +68,7 @@ export default function AppsList() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Apps</h1>

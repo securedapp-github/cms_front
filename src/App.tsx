@@ -17,6 +17,7 @@ import Webhooks from './pages/Webhooks';
 import DSRRequests from './pages/DSRRequests';
 import Apps from './pages/apps';
 import DataCatalog from './pages/DataCatalog';
+import Pricing from './pages/Pricing';
 import { Toaster } from 'react-hot-toast';
 
 import RedirectConsent from './pages/consent/RedirectConsent';
@@ -57,6 +58,7 @@ function App() {
               <Route path="/webhooks" element={<Webhooks />} />
               <Route path="/apps" element={<Apps />} />
               <Route path="/data-catalog" element={<DataCatalog />} />
+              <Route path="/pricing" element={<Pricing />} />
               <Route path="/dsr-requests" element={<DSRRequests />} />
             </Route>
           </Route>
