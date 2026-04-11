@@ -3,6 +3,7 @@ import { create } from 'zustand';
 export interface User {
     name: string;
     email: string;
+    role?: string;
 }
 
 export interface TenantMetadata {
@@ -22,6 +23,7 @@ interface AuthState {
     // Actions
     loginWithOnboarding: (onboardingToken: string, user: User) => void;
     loginFull: (token: string, tenantId: string, clientId: string, user: User, tenantMetadata?: TenantMetadata) => void;
+    updateUserRole: (role: string) => void;
     completeOnboarding: (token: string, tenantId: string, clientId: string, tenantMetadata: TenantMetadata) => void;
     setTenantMetadata: (tenantMetadata: TenantMetadata) => void;
     logout: () => void;
@@ -57,6 +59,17 @@ export const useAuthStore = create<AuthState>((set) => ({
         }
         localStorage.removeItem('onboardingToken');
         set({ token, tenantId, clientId, user, tenantMetadata: tenantMetadata || null, onboardingToken: null });
+    },
+
+    updateUserRole: (role) => {
+        set((state) => {
+            if (state.user) {
+                const updatedUser = { ...state.user, role };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+                return { user: updatedUser };
+            }
+            return state;
+        });
     },
 
     completeOnboarding: (token, tenantId, clientId, tenantMetadata) => {

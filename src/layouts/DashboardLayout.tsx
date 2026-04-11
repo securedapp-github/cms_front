@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import {
@@ -25,14 +25,44 @@ import {
 import useSWR from 'swr';
 import { appsApi } from '../api/appsApi';
 import { tenantApi } from '../api/tenantApi';
+import { authApi } from '../api/authApi';
 import { useAppStore } from '../store/appStore';
+import { 
+    ROLES, 
+    canViewPlatformLevel, 
+    canViewSensitiveConfig,
+    canViewManageApps,
+    canManageOrgRoles,
+    canViewAudit 
+} from '../utils/rbac';
 import logo from '../assets/img/STRIGHT.png';
 
 const DashboardLayout = () => {
-    const { user, logout, tenantId, tenantMetadata, setTenantMetadata } = useAuthStore();
+    const { user, logout, tenantId, tenantMetadata, setTenantMetadata, updateUserRole } = useAuthStore();
     const { selectedAppId, setSelectedAppId } = useAppStore();
     const navigate = useNavigate();
     const location = useLocation();
+    const fetchInProgress = useRef(false);
+
+    // Fetch user role if missing (Optimized with Ref guard)
+    useEffect(() => {
+        if (user && !user.role && !fetchInProgress.current) {
+            fetchInProgress.current = true;
+            authApi.getCurrentUser().then((res) => {
+                if (res.client && res.client.role) {
+                    updateUserRole(res.client.role);
+                }
+            }).catch((err) => {
+                console.error('Auth check failed:', err);
+                if (err.response?.status === 401) {
+                    logout();
+                    navigate('/');
+                }
+            }).finally(() => {
+                fetchInProgress.current = false;
+            });
+        }
+    }, [user, updateUserRole, logout, navigate]);
 
     // Fetch apps
     const { data: appsData } = useSWR('tenant/apps', () => appsApi.listApps());
@@ -69,22 +99,24 @@ const DashboardLayout = () => {
     };
 
     const navItems = [
-        { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { label: 'Apps', path: '/apps', icon: AppWindow },
-        { label: 'Consents', path: '/consents', icon: ShieldCheck },
-        { label: 'Purposes', path: '/purposes', icon: BookOpen },
-        { label: 'Policy Versions', path: '/policy-versions', icon: FileText },
-        { label: 'Clients', path: '/clients', icon: Users },
-        { label: 'Data Catalog', path: '/data-catalog', icon: Database },
-        { label: 'Webhooks', path: '/webhooks', icon: Webhook },
-        { label: 'DSR Requests', path: '/dsr-requests', icon: MessageSquare },
-        { label: 'Audit Logs', path: '/audit-logs', icon: History },
-        { label: 'API Keys', path: '/api-keys', icon: Key },
-        { label: 'Pricing', path: '/pricing', icon: CreditCard },
-        { label: 'Tenant Profile', path: '/tenant', icon: Settings },
+        { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, visible: true },
+        { label: 'Apps', path: '/apps', icon: AppWindow, visible: canViewManageApps(user?.role) },
+        { label: 'Consents', path: '/consents', icon: ShieldCheck, visible: true },
+        { label: 'Purposes', path: '/purposes', icon: BookOpen, visible: true },
+        { label: 'Policy Versions', path: '/policy-versions', icon: FileText, visible: true },
+        { label: 'Clients', path: '/clients', icon: Users, visible: true },
+        { label: 'Data Catalog', path: '/data-catalog', icon: Database, visible: true },
+        { label: 'Webhooks', path: '/webhooks', icon: Webhook, visible: canViewSensitiveConfig(user?.role) },
+        { label: 'DSR Requests', path: '/dsr-requests', icon: MessageSquare, visible: true },
+        { label: 'Audit Logs', path: '/audit-logs', icon: History, visible: canViewAudit(user?.role) },
+        { label: 'API Keys', path: '/api-keys', icon: Key, visible: canViewSensitiveConfig(user?.role) },
+        { label: 'Pricing', path: '/pricing', icon: CreditCard, visible: canManageOrgRoles(user?.role) },
+        { label: 'Tenant Profile', path: '/tenant', icon: Settings, visible: true },
+    ].filter(item => item.visible);
+
+    const platformNavItems = [
+        { label: 'Organizations', path: '/platform/orgs', icon: Building2 },
     ];
-
-
 
     return (
         <div className="min-h-screen bg-slate-50 flex font-sans antialiased text-slate-900">
@@ -119,6 +151,34 @@ const DashboardLayout = () => {
                             )}
                         </NavLink>
                     ))}
+
+                    {canViewPlatformLevel(user?.role) && (
+                        <>
+                            <div className="pt-4 pb-2">
+                                <p className="px-3 text-xs font-bold uppercase tracking-wider text-slate-400">Platform</p>
+                            </div>
+                            {platformNavItems.map((item) => (
+                                <NavLink
+                                    key={item.path}
+                                    to={item.path}
+                                    className={({ isActive }) =>
+                                        `flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group ${isActive
+                                            ? 'bg-indigo-50 text-indigo-700 shadow-sm'
+                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                        }`
+                                    }
+                                >
+                                    <div className="flex items-center">
+                                        <item.icon className={`w-5 h-5 mr-3 flex-shrink-0 transition-colors ${location.pathname === item.path ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                                        {item.label}
+                                    </div>
+                                    {location.pathname === item.path && (
+                                        <ChevronRight className="w-4 h-4 text-indigo-400" />
+                                    )}
+                                </NavLink>
+                            ))}
+                        </>
+                    )}
                 </nav>
 
                 <div className="p-4 border-t border-slate-100 bg-slate-50/50">
@@ -191,7 +251,7 @@ const DashboardLayout = () => {
                 </header>
 
                 {/* Page Content */}
-                <main className="flex-1 pt-4 px-8 pb-8 overflow-y-auto">
+                <main className="flex-1 pt-4 px-8 pb-8">
                     <Outlet />
                 </main>
             </div>

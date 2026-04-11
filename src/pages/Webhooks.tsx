@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { CopyButton } from '../components/ui/CopyButton';
+import { useAuthStore } from '../store/authStore';
+import { canManageCredentials } from '../utils/rbac';
 
 const EVENT_OPTIONS = [
     { id: 'consent.granted', label: 'consent.granted' },
@@ -27,6 +29,7 @@ const EVENT_OPTIONS = [
 ];
 
 export default function Webhooks() {
+    const { user } = useAuthStore();
     const { mutate } = useSWRConfig();
     const { data: webhooks = [], error, isLoading, mutate: mutateThis } = useSWR('webhooks', () => webhookApi.getWebhooks());
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -103,13 +106,15 @@ export default function Webhooks() {
                     <h2 className="text-2xl font-bold text-slate-900">Webhooks</h2>
                     <p className="text-slate-500 font-medium text-sm">Manage webhook endpoints for real-time event notifications.</p>
                 </div>
-                <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Webhook
-                </button>
+                {canManageCredentials(user?.role) && (
+                    <button
+                        onClick={() => setShowCreateModal(true)}
+                        className="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95"
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Webhook
+                    </button>
+                )}
             </div>
 
             {/* List Section */}
@@ -196,12 +201,14 @@ export default function Webhooks() {
                                                 >
                                                     <Info className="w-4 h-4" />
                                                 </button>
-                                                <button
-                                                    onClick={() => handleDelete(webhook.id)}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+                                                {canManageCredentials(user?.role) && (
+                                                    <button
+                                                        onClick={() => handleDelete(webhook.id)}
+                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
@@ -351,15 +358,17 @@ export default function Webhooks() {
                             </div>
                         </div>
 
-                        <div className="p-8 border-t border-slate-100 bg-slate-50/30">
-                            <button
-                                onClick={() => handleDelete(selectedWebhook.id)}
-                                className="w-full py-4 bg-white hover:bg-red-50 text-red-600 text-sm font-bold rounded-2xl border border-red-100 transition-all flex items-center justify-center"
-                            >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Delete Webhook Endpoint
-                            </button>
-                        </div>
+                        {canManageCredentials(user?.role) && (
+                            <div className="p-8 border-t border-slate-100 bg-slate-50/30">
+                                <button
+                                    onClick={() => handleDelete(selectedWebhook.id)}
+                                    className="w-full py-4 bg-white hover:bg-red-50 text-red-600 text-sm font-bold rounded-2xl border border-red-100 transition-all flex items-center justify-center"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete Webhook Endpoint
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

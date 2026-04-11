@@ -42,7 +42,8 @@ const Login = () => {
                     response.client_id,
                     {
                         name: response.name || 'User',
-                        email: response.email
+                        email: response.email,
+                        role: response.role
                     }
                 );
                 navigate('/dashboard');

@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Auth Components and Pages
-import { ProtectedRoute, OnboardingRoute, PublicRoute } from './components/auth/RouteGuards';
+import { ProtectedRoute, OnboardingRoute, PublicRoute, RoleGuard } from './components/auth/RouteGuards';
 import DashboardLayout from './layouts/DashboardLayout';
 import Login from './pages/Login';
 import Onboarding from './pages/Onboarding';
@@ -18,6 +18,9 @@ import DSRRequests from './pages/DSRRequests';
 import Apps from './pages/apps';
 import DataCatalog from './pages/DataCatalog';
 import Pricing from './pages/Pricing';
+import OrgsList from './pages/Platform/OrgsList';
+import OrgDetails from './pages/Platform/OrgDetails';
+import RBACTest from './pages/Admin/RBACTest';
 import { Toaster } from 'react-hot-toast';
 
 import RedirectConsent from './pages/consent/RedirectConsent';
@@ -53,13 +56,24 @@ function App() {
               <Route path="/policy-versions" element={<PolicyVersions />} />
               <Route path="/clients" element={<Clients />} />
               <Route path="/audit-logs" element={<AuditLogs />} />
-              <Route path="/api-keys" element={<APIKeys />} />
               <Route path="/tenant" element={<Tenant />} />
-              <Route path="/webhooks" element={<Webhooks />} />
-              <Route path="/apps" element={<Apps />} />
               <Route path="/data-catalog" element={<DataCatalog />} />
-              <Route path="/pricing" element={<Pricing />} />
               <Route path="/dsr-requests" element={<DSRRequests />} />
+
+              {/* Admin only routes */}
+              <Route element={<RoleGuard allowedRoles={['super_admin', 'org_admin']} />}>
+                <Route path="/api-keys" element={<APIKeys />} />
+                <Route path="/webhooks" element={<Webhooks />} />
+                <Route path="/apps" element={<Apps />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/admin/rbac-test" element={<RBACTest />} />
+              </Route>
+
+              {/* Platform (Super Admin only) */}
+              <Route element={<RoleGuard allowedRoles={['super_admin']} />}>
+                <Route path="/platform/orgs" element={<OrgsList />} />
+                <Route path="/platform/orgs/:id" element={<OrgDetails />} />
+              </Route>
             </Route>
           </Route>
         </Routes>

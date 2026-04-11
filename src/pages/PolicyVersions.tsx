@@ -14,8 +14,11 @@ import { policyApi, PolicyVersion } from '../api/policyApi';
 import toast from 'react-hot-toast';
 import { useAppStore } from '../store/appStore';
 import { CopyButton } from '../components/ui/CopyButton';
+import { useAuthStore } from '../store/authStore';
+import { canManagePolicies } from '../utils/rbac';
 
 const PolicyVersions = () => {
+    const { user } = useAuthStore();
     const { selectedAppId } = useAppStore();
     const { data: policies = [], isLoading: loading, mutate } = useSWR(
         selectedAppId ? ['policies', selectedAppId] : null,
@@ -72,13 +75,15 @@ const PolicyVersions = () => {
                     <h2 className="text-2xl font-bold text-slate-900">Policy Versions</h2>
                     <p className="text-slate-500 font-medium text-sm">Maintain and audit your privacy policy and terms of service history.</p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-indigo-200 transition-all active:scale-95 space-x-2"
-                >
-                    <Plus className="w-4 h-4" />
-                    <span>Publish New Version</span>
-                </button>
+                {canManagePolicies(user?.role) && (
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-indigo-200 transition-all active:scale-95 space-x-2"
+                    >
+                        <Plus className="w-4 h-4" />
+                        <span>Publish New Version</span>
+                    </button>
+                )}
             </div>
 
             {/* Main Policy List */}
@@ -92,12 +97,14 @@ const PolicyVersions = () => {
                     <div className="py-20 text-center bg-white rounded-3xl border border-dashed border-slate-300">
                         <FileText className="w-12 h-12 text-slate-200 mx-auto mb-4" />
                         <p className="text-slate-500 font-bold">No policy versions published yet.</p>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="mt-4 text-indigo-600 font-bold text-sm hover:underline"
-                        >
-                            Publish version 1.0
-                        </button>
+                        {canManagePolicies(user?.role) && (
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className="mt-4 text-indigo-600 font-bold text-sm hover:underline"
+                            >
+                                Publish version 1.0
+                            </button>
+                        )}
                     </div>
                 ) : (
                     policies.map((policy) => (

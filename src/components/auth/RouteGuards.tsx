@@ -44,3 +44,16 @@ export const PublicRoute = () => {
 
     return <Outlet />;
 };
+
+// Role Guard for specific roles
+export const RoleGuard = ({ allowedRoles }: { allowedRoles: string[] }) => {
+    const { user } = useAuthStore();
+    
+    // If we don't have a role, we'll assume it's still loading (DashboardLayout handles it)
+    // or if we do and it's not in the allowed list, we redirect.
+    if (user?.role && !allowedRoles.includes(user.role)) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    return <Outlet />;
+};

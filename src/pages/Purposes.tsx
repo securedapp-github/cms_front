@@ -12,8 +12,11 @@ import { purposeApi, Purpose } from '../api/purposeApi';
 import { dataCatalogApi, DataCatalogEntry } from '../api/dataCatalogApi';
 import toast from 'react-hot-toast';
 import { CopyButton } from '../components/ui/CopyButton';
+import { useAuthStore } from '../store/authStore';
+import { canManagePurposes } from '../utils/rbac';
 
 const Purposes = () => {
+    const { user } = useAuthStore();
     const { data: purposes = [], isLoading: loadingPurposes, mutate: mutatePurposes } = useSWR('purposes', () => purposeApi.getPurposes());
     const { data: catalogResponse, isLoading: loadingCatalog } = useSWR('data-catalog', () => dataCatalogApi.listCatalog());
     
@@ -76,13 +79,15 @@ const Purposes = () => {
                     <h2 className="text-2xl font-bold text-slate-900">Processing Purposes</h2>
                     <p className="text-slate-500 font-medium text-sm">Define why you collect and process user data.</p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-indigo-200 transition-all active:scale-95 space-x-2"
-                >
-                    <Plus className="w-4 h-4" />
-                    <span>Create Purpose</span>
-                </button>
+                {canManagePurposes(user?.role) && (
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-indigo-200 transition-all active:scale-95 space-x-2"
+                    >
+                        <Plus className="w-4 h-4" />
+                        <span>Create Purpose</span>
+                    </button>
+                )}
             </div>
 
             {/* Purposes Grid */}
@@ -106,17 +111,19 @@ const Purposes = () => {
                 ) : (
                     purposes.map((purpose) => (
                         <div key={purpose.id} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div className="flex items-center space-x-1">
-                                    <button
-                                        onClick={() => handleDelete(purpose.id)}
-                                        disabled={isDeleting === purpose.id}
-                                        className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors disabled:opacity-50"
-                                    >
-                                        {isDeleting === purpose.id ? <Loader2 className="w-4 h-4 animate-spin text-red-500" /> : <Trash2 className="w-4 h-4" />}
-                                    </button>
+                            {canManagePurposes(user?.role) && (
+                                <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex items-center space-x-1">
+                                        <button
+                                            onClick={() => handleDelete(purpose.id)}
+                                            disabled={isDeleting === purpose.id}
+                                            className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors disabled:opacity-50"
+                                        >
+                                            {isDeleting === purpose.id ? <Loader2 className="w-4 h-4 animate-spin text-red-500" /> : <Trash2 className="w-4 h-4" />}
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             <div className="flex items-start justify-between mb-4">
                                 <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600">

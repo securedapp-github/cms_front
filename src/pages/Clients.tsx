@@ -14,12 +14,15 @@ import {
 } from 'lucide-react';
 import { clientApi, Client } from '../api/clientApi';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../store/authStore';
+import { canManageOrgRoles } from '../utils/rbac';
 
 const Clients = () => {
+    const { user } = useAuthStore();
     const { data: clients = [], isLoading: loading, mutate } = useSWR('clients', () => clientApi.getClients());
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [inviteEmail, setInviteEmail] = useState('');
-    const [inviteRole, setInviteRole] = useState('viewer');
+    const [inviteRole, setInviteRole] = useState('operations_manager');
     const [isInviting, setIsInviting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -58,13 +61,15 @@ const Clients = () => {
                     <h2 className="text-2xl font-bold text-slate-900">Clients</h2>
                     <p className="text-slate-500 font-medium text-sm">Manage your organization's clients and their access levels.</p>
                 </div>
-                <button
-                    onClick={() => setIsInviteModalOpen(true)}
-                    className="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-indigo-200 transition-all active:scale-95 space-x-2"
-                >
-                    <UserPlus className="w-4 h-4" />
-                    <span>Invite Client</span>
-                </button>
+                {canManageOrgRoles(user?.role) && (
+                    <button
+                        onClick={() => setIsInviteModalOpen(true)}
+                        className="inline-flex items-center justify-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-sm shadow-indigo-200 transition-all active:scale-95 space-x-2"
+                    >
+                        <UserPlus className="w-4 h-4" />
+                        <span>Invite Client</span>
+                    </button>
+                )}
             </div>
 
             {/* Filters and Search */}
@@ -137,11 +142,11 @@ const Clients = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${client.role === 'owner'
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${['owner', 'super_admin', 'org_admin'].includes(client.role)
                                                     ? 'bg-indigo-50 text-indigo-700 border-indigo-100'
                                                     : 'bg-emerald-50 text-emerald-700 border-emerald-100'
                                                 }`}>
-                                                {client.role === 'owner' ? 'System' : 'Active'}
+                                                {['owner', 'super_admin'].includes(client.role) ? 'System' : 'Active'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
@@ -190,9 +195,9 @@ const Clients = () => {
                                         value={inviteRole}
                                         onChange={(e) => setInviteRole(e.target.value)}
                                     >
-                                        <option value="admin">Admin</option>
-                                        <option value="auditor">Auditor</option>
-                                        <option value="viewer">Viewer</option>
+                                        <option value="org_admin">Org Admin</option>
+                                        <option value="operations_manager">Operations Manager</option>
+                                        <option value="auditor_compliance">Auditor / Compliance</option>
                                     </select>
                                 </div>
                             </div>

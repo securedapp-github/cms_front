@@ -20,6 +20,14 @@ import { consentApi } from '../api/consentApi';
 import { purposeApi, Purpose } from '../api/purposeApi';
 import { policyApi, PolicyVersion } from '../api/policyApi';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../store/authStore';
+import { canManageConsentState } from '../utils/rbac';
+
+interface ConsentDecision {
+    purpose_id: string;
+    decision: 'GRANTED' | 'REJECTED';
+    data_points?: string[];
+}
 
 interface ConsentRecord {
     id: string;
@@ -30,9 +38,12 @@ interface ConsentRecord {
     currentStatus: 'granted' | 'withdrawn';
     status: 'ACTIVE' | 'REVOKED' | 'EXPIRED'; // API now returns this
     updatedAt: string;
+    purpose_decisions?: ConsentDecision[];
+    rejected_purposes?: string[];
 }
 
 const Consents = () => {
+    const { user } = useAuthStore();
     const { selectedAppId } = useAppStore();
     const queryClient = useQueryClient();
     
@@ -228,13 +239,15 @@ const Consents = () => {
                     <h2 className="text-2xl font-bold text-slate-900">User Consents</h2>
                     <p className="text-slate-500 font-medium text-sm">Monitor and manage user consent records across all purposes.</p>
                 </div>
-                <button
-                    onClick={handleOpenCreateModal}
-                    className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-200 active:scale-95"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Record New Consent
-                </button>
+                {canManageConsentState(user?.role) && (
+                    <button
+                        onClick={handleOpenCreateModal}
+                        className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-200 active:scale-95"
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Record New Consent
+                    </button>
+                )}
             </div>
 
             {/* Filters */}
@@ -460,6 +473,38 @@ const Consents = () => {
                                                     {purpose.required_data.map((data, i) => (
                                                         <span key={i} className="px-2 py-1 bg-white border border-slate-200 rounded-md text-[10px] font-bold text-slate-600">
                                                             {data}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {selectedConsent.purpose_decisions && selectedConsent.purpose_decisions.length > 0 && (
+                                            <div className="p-4 bg-white border border-slate-100 rounded-xl">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase block mb-2">Purpose Decisions</span>
+                                                <div className="space-y-2">
+                                                    {selectedConsent.purpose_decisions.map((decision, i) => (
+                                                        <div key={i} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg text-xs font-medium">
+                                                            <span className="font-mono text-slate-600">{decision.purpose_id}</span>
+                                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                                                decision.decision === 'GRANTED' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                                                            }`}>
+                                                                {decision.decision}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {selectedConsent.rejected_purposes && selectedConsent.rejected_purposes.length > 0 && (
+                                            <div className="p-4 bg-rose-50/50 border border-rose-100 rounded-xl">
+                                                <span className="text-[10px] font-bold text-rose-400 uppercase block mb-2 flex items-center">
+                                                    <ShieldAlert className="w-3 h-3 mr-1" />
+                                                    Rejected Purposes
+                                                </span>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {selectedConsent.rejected_purposes.map((rp, i) => (
+                                                        <span key={i} className="px-2 py-1 bg-white border border-rose-200 rounded-md text-[10px] font-bold text-rose-700">
+                                                            {rp}
                                                         </span>
                                                     ))}
                                                 </div>

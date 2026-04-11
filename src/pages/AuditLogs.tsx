@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { auditApi } from '../api/auditApi';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../store/authStore';
+import { canExportCompliance } from '../utils/rbac';
 
 interface AuditLog {
     id: string;
@@ -34,6 +36,7 @@ interface Pagination {
 }
 
 const AuditLogs = () => {
+    const { user } = useAuthStore();
     const [page, setPage] = useState(1);
     const [actionFilter, setActionFilter] = useState('');
 
@@ -65,10 +68,12 @@ const AuditLogs = () => {
                     <h2 className="text-2xl font-bold text-slate-900">Audit Logs</h2>
                     <p className="text-slate-500 font-medium text-sm">Comprehensive trail of all administrative and system actions.</p>
                 </div>
-                <button className="inline-flex items-center justify-center px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl border border-slate-200 transition-all active:scale-95 space-x-2">
-                    <Download className="w-4 h-4" />
-                    <span>Export CSV</span>
-                </button>
+                {canExportCompliance(user?.role) && (
+                    <button className="inline-flex items-center justify-center px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-xl border border-slate-200 transition-all active:scale-95 space-x-2">
+                        <Download className="w-4 h-4" />
+                        <span>Export CSV</span>
+                    </button>
+                )}
             </div>
 
             {/* Filters */}

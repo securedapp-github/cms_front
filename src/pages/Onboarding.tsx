@@ -69,7 +69,8 @@ const Onboarding = () => {
             completeOnboarding(fullToken, tenantId, clientId, {
                 organizationName: formData.organizationName,
                 industry: formData.industry,
-                country: formData.country
+                country: formData.country,
+                role: response.client?.role
             });
 
             navigate('/dashboard');

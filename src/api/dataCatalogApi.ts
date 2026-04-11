@@ -3,17 +3,18 @@ import apiClient from './apiClient';
 export interface DataCatalogEntry {
     id: string;
     data_id: string;
+    display_name?: string;
     description: string;
     category: string;
-    sensitivity: 'LOW' | 'MEDIUM' | 'HIGH';
+    sensitivity: 'LOW' | 'MEDIUM' | 'HIGH' | 'RESTRICTED';
     status: 'active' | 'inactive';
 }
 
 export const dataCatalogApi = {
 
     // List all active data catalog entries
-    listCatalog: async (): Promise<{ data: DataCatalogEntry[] }> => {
-        const response = await apiClient.get('/data-catalog');
+    listCatalog: async (include_inactive: boolean = false): Promise<{ data: DataCatalogEntry[] }> => {
+        const response = await apiClient.get('/data-catalog', { params: { include_inactive } });
         return { data: response.data.data_catalog };
     },
 
@@ -24,7 +25,7 @@ export const dataCatalogApi = {
     },
 
     // Add a new data catalog entry
-    addEntry: async (payload: { data_id: string, category: string, description: string, sensitivity: string, max_validity_days: number }): Promise<DataCatalogEntry> => {
+    addEntry: async (payload: { data_id: string, display_name?: string, category: string, description: string, sensitivity: string, max_validity_days: number }): Promise<DataCatalogEntry> => {
         const response = await apiClient.post('/data-catalog', payload);
         return response.data;
     },

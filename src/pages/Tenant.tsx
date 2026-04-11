@@ -9,12 +9,13 @@ import {
     X,
     Loader2
 } from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
 import { tenantApi, Tenant as TenantData } from '../api/tenantApi';
 import toast from 'react-hot-toast';
+import { canManageTenantProfile } from '../utils/rbac';
+import { useAuthStore } from '../store/authStore';
 
 const Tenant = () => {
-    const { tenantId, tenantMetadata } = useAuthStore();
+    const { user, tenantId, tenantMetadata } = useAuthStore();
     const [tenantData, setTenantData] = useState<TenantData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -106,7 +107,7 @@ const Tenant = () => {
                     <h2 className="text-2xl font-bold text-slate-900 capitalize">Tenant Profile</h2>
                     <p className="text-slate-500 font-medium text-sm">Manage your organization's legal identity and contact information.</p>
                 </div>
-                {!isEditing && (
+                {!isEditing && canManageTenantProfile(user?.role) && (
                     <button
                         onClick={() => setIsEditing(true)}
                         className="inline-flex items-center justify-center px-4 py-2.5 bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl shadow-sm hover:bg-slate-50 transition-all active:scale-95 space-x-2"

@@ -14,7 +14,13 @@ export interface User {
     id: string;
     email: string;
     name: string;
-    // Extend as required
+    role: string;
+}
+
+export interface AuthMeResponse {
+    client: User;
+    tenant: any;
+    permissions: string[];
 }
 
 export const authApi = {
@@ -23,7 +29,7 @@ export const authApi = {
         return response.data;
     },
     getCurrentUser: async () => {
-        const response = await apiClient.get<User>('/auth/me');
+        const response = await apiClient.get<AuthMeResponse>('/auth/me');
         return response.data;
     },
 };

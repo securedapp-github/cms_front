@@ -3,15 +3,20 @@ import useSWR, { mutate } from 'swr';
 import { Database, Loader2, Info, Plus, Trash2, X } from 'lucide-react';
 import { dataCatalogApi, DataCatalogEntry } from '../api/dataCatalogApi';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../store/authStore';
+import { canManageDataCatalog } from '../utils/rbac';
 
 export default function DataCatalog() {
-    const { data, error, isLoading } = useSWR<{ data: DataCatalogEntry[] }>('dataCatalog', dataCatalogApi.listCatalog);
+    const { user } = useAuthStore();
+    const [includeInactive, setIncludeInactive] = useState(false);
+    const { data, error, isLoading } = useSWR<{ data: DataCatalogEntry[] }>(['dataCatalog', includeInactive], () => dataCatalogApi.listCatalog(includeInactive));
     const catalog = data?.data || [];
 
     const [isAdding, setIsAdding] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         data_id: '',
+        display_name: '',
         category: '',
         description: '',
         sensitivity: 'LOW',
@@ -36,8 +41,8 @@ export default function DataCatalog() {
             await dataCatalogApi.addEntry(formData);
             toast.success('Data entry added');
             setIsAdding(false);
-            setFormData({ data_id: '', category: '', description: '', sensitivity: 'LOW', max_validity_days: 0 });
-            mutate('dataCatalog');
+            setFormData({ data_id: '', display_name: '', category: '', description: '', sensitivity: 'LOW', max_validity_days: 0 });
+            mutate(['dataCatalog', includeInactive]);
         } catch (err: any) {
             toast.error(err.response?.data?.message || 'Failed to add entry');
         } finally {
@@ -56,13 +61,26 @@ export default function DataCatalog() {
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Data Catalog</h1>
                     <p className="text-sm text-slate-500 mt-1">Platform-wide registry of discoverable data objects and elements.</p>
                 </div>
-                <button
-                    onClick={() => setIsAdding(true)}
-                    className="flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition"
-                >
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Entry
-                </button>
+                <div className="flex items-center space-x-4">
+                    <label className="flex items-center space-x-2 text-sm text-slate-600 font-medium">
+                        <input
+                            type="checkbox"
+                            checked={includeInactive}
+                            onChange={(e) => setIncludeInactive(e.target.checked)}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <span>Show Inactive</span>
+                    </label>
+                    {canManageDataCatalog(user?.role) && (
+                        <button
+                            onClick={() => setIsAdding(true)}
+                            className="flex items-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition"
+                        >
+                            <Plus className="w-4 h-4 mr-2" />
+                            New Entry
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Modal */}
@@ -77,7 +95,7 @@ export default function DataCatalog() {
                         </div>
                         <form onSubmit={handleAdd} className="p-6 space-y-4 overflow-y-auto">
                             <div>
-                                <label className="block text-xs font-medium text-slate-600 mb-1">Data ID</label>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Data Name</label>
                                 <input
                                     required
                                     type="text"
@@ -85,6 +103,16 @@ export default function DataCatalog() {
                                     className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
                                     value={formData.data_id}
                                     onChange={(e) => setFormData(p => ({ ...p, data_id: e.target.value }))}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-600 mb-1">Display Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Aadhaar Number"
+                                    className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                    value={formData.display_name}
+                                    onChange={(e) => setFormData(p => ({ ...p, display_name: e.target.value }))}
                                 />
                             </div>
                             <div>
@@ -122,6 +150,7 @@ export default function DataCatalog() {
                                     <option value="LOW">LOW</option>
                                     <option value="MEDIUM">MEDIUM</option>
                                     <option value="HIGH">HIGH</option>
+                                    <option value="RESTRICTED">RESTRICTED</option>
                                 </select>
                             </div>
                             <div>
@@ -160,7 +189,7 @@ export default function DataCatalog() {
                         <table className="w-full text-left text-sm">
                             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 whitespace-nowrap">
                                 <tr>
-                                    <th className="px-6 py-4 font-medium uppercase tracking-wider text-[10px]">Data ID</th>
+                                    <th className="px-6 py-4 font-medium uppercase tracking-wider text-[10px]">Data Name</th>
                                     <th className="px-6 py-4 font-medium uppercase tracking-wider text-[10px]">Category</th>
                                     <th className="px-6 py-4 font-medium uppercase tracking-wider text-[10px]">Sensitivity</th>
                                     <th className="px-6 py-4 font-medium uppercase tracking-wider text-[10px]">Status</th>
@@ -173,8 +202,8 @@ export default function DataCatalog() {
                                     <tr key={entry.id} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span className="font-bold text-slate-900">{entry.data_id}</span>
-                                                <span className="text-[9px] text-slate-400 font-medium">Internal ID: {entry.id.split('-')[0]}...</span>
+                                                <span className="font-bold text-slate-900">{entry.display_name || entry.data_id}</span>
+                                                <span className="text-[9px] text-slate-400 font-medium font-mono">{entry.data_id}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
@@ -184,6 +213,7 @@ export default function DataCatalog() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
+                                                entry.sensitivity === 'RESTRICTED' ? 'bg-purple-50 text-purple-700 border-purple-200' :
                                                 entry.sensitivity === 'HIGH' ? 'bg-rose-50 text-rose-700 border-rose-100' :
                                                 entry.sensitivity === 'MEDIUM' ? 'bg-amber-50 text-amber-700 border-amber-100' :
                                                 'bg-emerald-50 text-emerald-700 border-emerald-100'
@@ -207,12 +237,14 @@ export default function DataCatalog() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button 
-                                                onClick={() => handleDelete(entry.id, entry.data_id)}
-                                                className="p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            {canManageDataCatalog(user?.role) && (
+                                                <button 
+                                                    onClick={() => handleDelete(entry.id, entry.data_id)}
+                                                    className="p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
