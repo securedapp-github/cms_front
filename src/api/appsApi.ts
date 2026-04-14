@@ -5,6 +5,7 @@ export interface AppConfig {
     tenant_id: string;
     name: string;
     slug: string;
+    consent_flow: 'embedded' | 'redirect';
     status: 'active' | 'inactive';
     created_at: string;
 }
@@ -23,13 +24,13 @@ export const appsApi = {
     },
 
     // Create app
-    createApp: async (data: { name: string; slug: string }): Promise<{ app: AppConfig }> => {
+    createApp: async (data: { name: string; slug: string; consent_flow: 'embedded' | 'redirect' }): Promise<{ app: AppConfig }> => {
         const response = await apiClient.post('/tenant/apps', data);
         return response.data;
     },
 
     // Update app
-    updateApp: async (appId: string, data: { name?: string; slug?: string; status?: 'active' | 'inactive' }): Promise<{ app: AppConfig }> => {
+    updateApp: async (appId: string, data: { name?: string; slug?: string; status?: 'active' | 'inactive'; consent_flow?: 'embedded' | 'redirect' }): Promise<{ app: AppConfig }> => {
         const response = await apiClient.put(`/tenant/apps/${appId}`, data);
         return response.data;
     },

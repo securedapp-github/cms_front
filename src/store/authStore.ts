@@ -24,7 +24,7 @@ interface AuthState {
     loginWithOnboarding: (onboardingToken: string, user: User) => void;
     loginFull: (token: string, tenantId: string, clientId: string, user: User, tenantMetadata?: TenantMetadata) => void;
     updateUserRole: (role: string) => void;
-    completeOnboarding: (token: string, tenantId: string, clientId: string, tenantMetadata: TenantMetadata) => void;
+    completeOnboarding: (token: string, tenantId: string, clientId: string, tenantMetadata: TenantMetadata, role?: string) => void;
     setTenantMetadata: (tenantMetadata: TenantMetadata) => void;
     logout: () => void;
 }
@@ -72,13 +72,27 @@ export const useAuthStore = create<AuthState>((set) => ({
         });
     },
 
-    completeOnboarding: (token, tenantId, clientId, tenantMetadata) => {
+    completeOnboarding: (token, tenantId, clientId, tenantMetadata, role) => {
         localStorage.setItem('token', token);
         localStorage.setItem('tenantId', tenantId);
         localStorage.setItem('clientId', clientId);
         localStorage.setItem('tenantMetadata', JSON.stringify(tenantMetadata));
         localStorage.removeItem('onboardingToken');
-        set({ token, tenantId, clientId, tenantMetadata, onboardingToken: null });
+
+        set((state) => {
+            const updatedUser = role && state.user ? { ...state.user, role } : state.user;
+            if (role && updatedUser) {
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+            }
+            return {
+                token,
+                tenantId,
+                clientId,
+                tenantMetadata,
+                user: updatedUser,
+                onboardingToken: null
+            };
+        });
     },
 
     setTenantMetadata: (tenantMetadata) => {

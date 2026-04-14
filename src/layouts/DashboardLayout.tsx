@@ -100,21 +100,22 @@ const DashboardLayout = () => {
 
     const navItems = [
         { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, visible: true },
-        { label: 'Apps', path: '/apps', icon: AppWindow, visible: canViewManageApps(user?.role) },
+        { label: 'Apps', path: '/apps', icon: AppWindow, visible: canViewManageApps(user?.role) && user?.role !== ROLES.SUPER_ADMIN },
         { label: 'Consents', path: '/consents', icon: ShieldCheck, visible: true },
         { label: 'Purposes', path: '/purposes', icon: BookOpen, visible: true },
         { label: 'Policy Versions', path: '/policy-versions', icon: FileText, visible: true },
         { label: 'Clients', path: '/clients', icon: Users, visible: true },
-        { label: 'Data Catalog', path: '/data-catalog', icon: Database, visible: true },
-        { label: 'Webhooks', path: '/webhooks', icon: Webhook, visible: canViewSensitiveConfig(user?.role) },
+        { label: 'Data Catalog', path: '/data-catalog', icon: Database, visible: user?.role !== ROLES.SUPER_ADMIN },
+        { label: 'Webhooks', path: '/webhooks', icon: Webhook, visible: canViewSensitiveConfig(user?.role) && user?.role !== ROLES.SUPER_ADMIN },
         { label: 'DSR Requests', path: '/dsr-requests', icon: MessageSquare, visible: true },
         { label: 'Audit Logs', path: '/audit-logs', icon: History, visible: canViewAudit(user?.role) },
         { label: 'API Keys', path: '/api-keys', icon: Key, visible: canViewSensitiveConfig(user?.role) },
-        { label: 'Pricing', path: '/pricing', icon: CreditCard, visible: canManageOrgRoles(user?.role) },
+        { label: 'Pricing', path: '/pricing', icon: CreditCard, visible: canManageOrgRoles(user?.role) && user?.role !== ROLES.SUPER_ADMIN },
         { label: 'Tenant Profile', path: '/tenant', icon: Settings, visible: true },
     ].filter(item => item.visible);
 
     const platformNavItems = [
+        { label: 'Platform Dashboard', path: '/platform/dashboard', icon: LayoutDashboard },
         { label: 'Organizations', path: '/platform/orgs', icon: Building2 },
     ];
 

@@ -22,7 +22,6 @@ const Onboarding = () => {
         organizationName: '',
         industry: '',
         country: '',
-        consentFlow: 'embedded' as 'embedded' | 'redirect',
         cin: '',
         gst: '',
         address: {
@@ -53,7 +52,6 @@ const Onboarding = () => {
                 organizationName: formData.organizationName,
                 industry: formData.industry,
                 country: formData.country,
-                consentFlow: formData.consentFlow,
                 cin: formData.cin,
                 gst: formData.gst,
                 address: {
@@ -69,9 +67,8 @@ const Onboarding = () => {
             completeOnboarding(fullToken, tenantId, clientId, {
                 organizationName: formData.organizationName,
                 industry: formData.industry,
-                country: formData.country,
-                role: response.client?.role
-            });
+                country: formData.country
+            }, response.client?.role);
 
             navigate('/dashboard');
 
@@ -174,25 +171,7 @@ const Onboarding = () => {
                                 </div>
                             </div>
 
-                            <div className="space-y-1.5">
-                                <label htmlFor="consent_flow" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Consent Flow *</label>
-                                <div className="relative">
-                                    <select
-                                        id="consent_flow"
-                                        className="w-full pl-4 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all appearance-none"
-                                        value={formData.consentFlow}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                consentFlow: e.target.value as 'embedded' | 'redirect',
-                                            })
-                                        }
-                                    >
-                                        <option value="embedded">Embedded</option>
-                                        <option value="redirect">Redirect</option>
-                                    </select>
-                                </div>
-                            </div>
+                            {/* Consent Flow removed */}
                         </div>
 
                         {/* Section 2: Legal Information (Conditional/Optional) */}

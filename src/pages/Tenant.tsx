@@ -25,7 +25,6 @@ const Tenant = () => {
         organizationName: '',
         industry: '',
         country: '',
-        consentFlow: 'embedded' as 'embedded' | 'redirect',
         cin: '',
         gst: '',
         address: {
@@ -46,7 +45,6 @@ const Tenant = () => {
                 organizationName: data.organizationName,
                 industry: data.industry || '',
                 country: data.country || '',
-                consentFlow: data.consentFlow || 'embedded',
                 cin: data.legal_info?.cin || '',
                 gst: data.legal_info?.gst || '',
                 address: {
@@ -97,7 +95,6 @@ const Tenant = () => {
     const orgName = tenantData?.organizationName || tenantMetadata?.organizationName || 'Not Set';
     const industry = tenantData?.industry || tenantMetadata?.industry || 'Not Set';
     const country = tenantData?.country || tenantMetadata?.country || 'Not Set';
-    const consentFlow = tenantData?.consentFlow || 'embedded';
     const createdAt = tenantData?.createdAt ? new Date(tenantData.createdAt).toLocaleDateString() : 'Unknown';
 
     return (
@@ -152,16 +149,8 @@ const Tenant = () => {
                                             onChange={(e) => setEditForm({...editForm, industry: e.target.value})}
                                         />
                                     </div>
-                                    <div className="space-y-1.5 md:col-span-2">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Consent Flow</label>
-                                        <select
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                                            value={editForm.consentFlow}
-                                            onChange={(e) => setEditForm({ ...editForm, consentFlow: e.target.value as 'embedded' | 'redirect' })}
-                                        >
-                                            <option value="embedded">Embedded</option>
-                                            <option value="redirect">Redirect</option>
-                                        </select>
+                                    <div className="space-y-1.5 md:col-span-1">
+                                        {/* Spacer to maintain grid layout or just removed */}
                                     </div>
                                 </div>
                             ) : (
@@ -183,8 +172,7 @@ const Tenant = () => {
                                         <p className="text-sm font-bold text-slate-700">{createdAt}</p>
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Consent Flow</label>
-                                        <p className="text-sm font-bold text-slate-700 capitalize">{consentFlow}</p>
+                                        {/* Blank */}
                                     </div>
                                 </div>
                             )}

@@ -5,7 +5,7 @@ interface AppModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (data: any) => Promise<void>;
-    initialData?: { name?: string; slug?: string; status?: 'active' | 'inactive' } | null;
+    initialData?: { name?: string; slug?: string; status?: 'active' | 'inactive'; consent_flow?: 'embedded' | 'redirect' } | null;
     title: string;
 }
 
@@ -13,6 +13,7 @@ export const AppModal: React.FC<AppModalProps> = ({ isOpen, onClose, onSubmit, i
     const [name, setName] = useState('');
     const [slug, setSlug] = useState('');
     const [status, setStatus] = useState<'active' | 'inactive'>('active');
+    const [consentFlow, setConsentFlow] = useState<'embedded' | 'redirect'>('embedded');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -20,6 +21,7 @@ export const AppModal: React.FC<AppModalProps> = ({ isOpen, onClose, onSubmit, i
             setName(initialData?.name || '');
             setSlug(initialData?.slug || '');
             setStatus(initialData?.status || 'active');
+            setConsentFlow(initialData?.consent_flow || 'embedded');
         }
     }, [isOpen, initialData]);
 
@@ -29,7 +31,7 @@ export const AppModal: React.FC<AppModalProps> = ({ isOpen, onClose, onSubmit, i
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            const data: any = { name, slug };
+            const data: any = { name, slug, consent_flow: consentFlow };
             if (initialData) data.status = status;
             await onSubmit(data);
             onClose();
@@ -68,6 +70,37 @@ export const AppModal: React.FC<AppModalProps> = ({ isOpen, onClose, onSubmit, i
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 required
                             />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Consent Flow</label>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setConsentFlow('embedded')}
+                                    className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all ${consentFlow === 'embedded'
+                                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm'
+                                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                                    }`}
+                                >
+                                    Embedded
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setConsentFlow('redirect')}
+                                    className={`px-4 py-2 text-xs font-bold rounded-xl border transition-all ${consentFlow === 'redirect'
+                                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm'
+                                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                                    }`}
+                                >
+                                    Redirect
+                                </button>
+                            </div>
+                            <p className="mt-1.5 text-[10px] text-slate-400 font-medium">
+                                {consentFlow === 'embedded' 
+                                    ? 'Host consent UI directly in your app using our SDK.' 
+                                    : 'Redirect users to our secure hosting for consent.'}
+                            </p>
                         </div>
 
                         {initialData && (

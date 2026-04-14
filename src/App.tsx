@@ -20,6 +20,7 @@ import DataCatalog from './pages/DataCatalog';
 import Pricing from './pages/Pricing';
 import OrgsList from './pages/Platform/OrgsList';
 import OrgDetails from './pages/Platform/OrgDetails';
+import PlatformDashboard from './pages/Platform/PlatformDashboard';
 import RBACTest from './pages/Admin/RBACTest';
 import { Toaster } from 'react-hot-toast';
 
@@ -57,20 +58,25 @@ function App() {
               <Route path="/clients" element={<Clients />} />
               <Route path="/audit-logs" element={<AuditLogs />} />
               <Route path="/tenant" element={<Tenant />} />
-              <Route path="/data-catalog" element={<DataCatalog />} />
               <Route path="/dsr-requests" element={<DSRRequests />} />
 
-              {/* Admin only routes */}
-              <Route element={<RoleGuard allowedRoles={['super_admin', 'org_admin']} />}>
+              {/* Org Admin only routes (Hidden from Super Admin) */}
+              <Route element={<RoleGuard allowedRoles={['org_admin']} />}>
+                <Route path="/data-catalog" element={<DataCatalog />} />
                 <Route path="/api-keys" element={<APIKeys />} />
                 <Route path="/webhooks" element={<Webhooks />} />
                 <Route path="/apps" element={<Apps />} />
                 <Route path="/pricing" element={<Pricing />} />
+              </Route>
+
+              {/* Admin test route (Visible to both) */}
+              <Route element={<RoleGuard allowedRoles={['super_admin', 'org_admin']} />}>
                 <Route path="/admin/rbac-test" element={<RBACTest />} />
               </Route>
 
               {/* Platform (Super Admin only) */}
               <Route element={<RoleGuard allowedRoles={['super_admin']} />}>
+                <Route path="/platform/dashboard" element={<PlatformDashboard />} />
                 <Route path="/platform/orgs" element={<OrgsList />} />
                 <Route path="/platform/orgs/:id" element={<OrgDetails />} />
               </Route>

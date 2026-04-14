@@ -5,7 +5,6 @@ export interface Tenant {
     organizationName: string;
     industry?: string;
     country?: string;
-    consentFlow?: 'embedded' | 'redirect';
     legal_info?: {
         cin?: string;
         gst?: string;
@@ -39,7 +38,6 @@ export interface OnboardTenantPayload {
     organizationName: string;
     industry: string;
     country: string;
-    consentFlow?: 'embedded' | 'redirect';
     cin?: string;
     gst?: string;
     address?: {
@@ -58,7 +56,6 @@ export const tenantApi = {
             organization_name: data.organizationName,
             industry: data.industry,
             country: data.country,
-            consent_flow: data.consentFlow,
             cin: data.cin,
             gst: data.gst,
             address: data.address
@@ -74,7 +71,6 @@ export const tenantApi = {
             organizationName: data.name || 'Not Set',
             industry: data.industry || 'Not Set',
             country: data.country || 'Not Set',
-            consentFlow: data.consent_flow || 'embedded',
             legal_info: data.legal_info,
             address: data.address,
             createdAt: data.created_at
@@ -85,7 +81,6 @@ export const tenantApi = {
             organization_name: data.organizationName,
             industry: data.industry,
             country: data.country,
-            consent_flow: data.consentFlow,
             cin: data.cin,
             gst: data.gst,
             address: data.address

@@ -1,5 +1,12 @@
 export type Role = 'super_admin' | 'org_admin' | 'operations_manager' | 'auditor_compliance';
 
+export const ROLES: Record<string, Role> = {
+  SUPER_ADMIN: 'super_admin',
+  ORG_ADMIN: 'org_admin',
+  OPERATIONS_MANAGER: 'operations_manager',
+  AUDITOR_COMPLIANCE: 'auditor_compliance',
+};
+
 export const ROLE_PERMISSIONS: Record<Role, string[]> = {
   super_admin: ["*"],
   org_admin: [

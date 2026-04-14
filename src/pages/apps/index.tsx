@@ -102,6 +102,7 @@ export default function AppsList() {
                                     <th className="px-6 py-4 font-medium">App Name</th>
                                     <th className="px-6 py-4 font-medium">App ID</th>
                                     <th className="px-6 py-4 font-medium">Slug</th>
+                                    <th className="px-6 py-4 font-medium">Flow</th>
                                     <th className="px-6 py-4 font-medium">Status</th>
                                     <th className="px-6 py-4 font-medium">Created Date</th>
                                     <th className="px-6 py-4 font-medium text-right">Actions</th>
@@ -123,6 +124,11 @@ export default function AppsList() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-slate-600 font-mono text-xs">{app.slug}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg border ${app.consent_flow === 'redirect' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-purple-50 text-purple-700 border-purple-100'}`}>
+                                                {app.consent_flow || 'embedded'}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${app.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
                                                 {app.status}

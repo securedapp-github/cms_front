@@ -1,5 +1,37 @@
 import apiClient from './apiClient';
 
+export interface PlatformDashboardSummary {
+    total_organizations: number;
+    total_consents: number;
+    active_consents: number;
+    total_users: number;
+    total_apps: number;
+    total_webhooks: number;
+}
+
+export interface PlatformDashboardOrg {
+    id: string;
+    organization_name: string;
+    status: string;
+    consent_flow_split: {
+        embedded_apps: number;
+        redirect_apps: number;
+    };
+    metrics: {
+        total_consents: number;
+        active_consents: number;
+        total_users: number;
+        total_clients: number;
+        total_apps: number;
+        total_webhooks: number;
+    };
+}
+
+export interface PlatformDashboardResponse {
+    summary: PlatformDashboardSummary;
+    organizations: PlatformDashboardOrg[];
+}
+
 export interface PlatformOrg {
     id: string;
     name: string;
@@ -15,6 +47,10 @@ export interface PlatformOrg {
 export const platformApi = {
     listOrganizations: async () => {
         const response = await apiClient.get<{ organizations: PlatformOrg[] }>('/platform/orgs');
+        return response.data;
+    },
+    getDashboardData: async (params?: { status?: string; search?: string; startDate?: string; endDate?: string }) => {
+        const response = await apiClient.get<PlatformDashboardResponse>('/platform/dashboard', { params });
         return response.data;
     },
     listOrganizationConsents: async (tenantId: string) => {
