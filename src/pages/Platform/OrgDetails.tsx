@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import { useParams, useNavigate } from 'react-router-dom';
 import { platformApi } from '../../api/platformApi';
-import { ArrowLeft, Ban, Loader2, Building2, AlertTriangle, ShieldCheck, History } from 'lucide-react';
+import { ArrowLeft, Ban, Loader2, Building2, AlertTriangle, ShieldCheck, History, User, AppWindow } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function OrgDetails() {
@@ -69,6 +69,31 @@ export default function OrgDetails() {
                 </button>
             </div>
 
+            {/* Metrics Summary */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                    { label: 'Total Apps', value: org.metrics?.total_apps || 0, icon: AppWindow, color: 'indigo' },
+                    { label: 'Total Consents', value: org.metrics?.total_consents || 0, icon: ShieldCheck, color: 'emerald' },
+                    { label: 'Data Principals', value: org.metrics?.total_users || 0, icon: User, color: 'purple' },
+                    { label: 'Active Consents', value: org.metrics?.active_consents || 0, icon: History, color: 'amber' },
+                ].map((stat, idx) => (
+                    <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all group">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                                stat.color === 'indigo' ? 'bg-indigo-50 text-indigo-600' :
+                                stat.color === 'emerald' ? 'bg-emerald-50 text-emerald-600' :
+                                stat.color === 'purple' ? 'bg-purple-50 text-purple-600' :
+                                'bg-amber-50 text-amber-600'
+                            }`}>
+                                <stat.icon className="w-5 h-5" />
+                            </div>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</span>
+                        </div>
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">{stat.value.toLocaleString()}</h3>
+                    </div>
+                ))}
+            </div>
+
             {/* Custom Modal */}
             {showDisableModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
@@ -88,7 +113,7 @@ export default function OrgDetails() {
                                     value={confirmName}
                                     onChange={(e) => setConfirmName(e.target.value)}
                                     placeholder={org.name}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
+                                    className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
                                 />
                             </div>
                             <div className="flex justify-end space-x-3 pt-4">
@@ -125,41 +150,90 @@ export default function OrgDetails() {
 
                 <div className="p-6">
                     {activeTab === 'consents' && (
-                        <div>
+                        <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                             {/* Simple list rendering for consents overview */}
-                            {!consentsData ? <Loader2 className="w-6 h-6 animate-spin text-indigo-500" /> : (
+                            {!consentsData ? (
+                                <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                                    <Loader2 className="w-8 h-8 animate-spin mb-4 text-indigo-500" />
+                                    <p className="font-bold text-sm">Loading organization consents...</p>
+                                </div>
+                            ) : (
                                 <div className="space-y-4">
                                     {(consentsData.consents || []).map((c: any) => (
-                                        <div key={c.id} className="p-4 border border-slate-200 rounded-lg flex justify-between items-center text-sm">
-                                            <div>
-                                                <p className="font-bold text-slate-800">{c.app_id}</p>
-                                                <p className="text-slate-500 text-xs">User: {c.user_identifier}</p>
+                                        <div key={c.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex justify-between items-center transition-all hover:shadow-md group">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-indigo-600 shadow-sm">
+                                                    <ShieldCheck className="w-5 h-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-black text-slate-900 leading-tight uppercase tracking-tight">{c.app?.name || 'Legacy App'}</p>
+                                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">User: {c.user_id?.substring(0, 16)}...</p>
+                                                </div>
                                             </div>
-                                            <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium">{c.status}</span>
+                                            <div className="flex items-center gap-4">
+                                                <div className="text-right hidden sm:block">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Logged At</p>
+                                                    <p className="text-xs font-bold text-slate-600">{new Date(c.created_at || Date.now()).toLocaleDateString()}</p>
+                                                </div>
+                                                <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest border ${
+                                                    c.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'
+                                                }`}>
+                                                    {c.status}
+                                                </span>
+                                            </div>
                                         </div>
                                     ))}
-                                    {(!consentsData.consents || consentsData.consents.length === 0) && <p className="text-slate-500 text-sm">No consents found.</p>}
+                                    {(!consentsData.consents || consentsData.consents.length === 0) && (
+                                        <div className="flex flex-col items-center justify-center py-20 text-slate-300">
+                                            <ShieldCheck className="w-12 h-12 mb-4 opacity-10" />
+                                            <p className="font-black text-sm uppercase tracking-widest">No consents recorded yet</p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
                     )}
                     {activeTab === 'audit' && (
-                        <div>
-                             {!auditData ? <Loader2 className="w-6 h-6 animate-spin text-indigo-500" /> : (
-                                <div className="space-y-4">
+                        <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                             {!auditData ? (
+                                <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                                    <Loader2 className="w-8 h-8 animate-spin mb-4 text-indigo-500" />
+                                    <p className="font-bold text-sm">Loading activity logs...</p>
+                                </div>
+                             ) : (
+                                <div className="space-y-3">
                                     {(auditData.logs || []).map((log: any) => (
-                                        <div key={log.id} className="p-4 border border-slate-200 rounded-lg flex flex-col space-y-1 text-sm">
+                                        <div key={log.id} className="p-4 bg-white border border-slate-100 rounded-2xl flex flex-col space-y-3 transition-all hover:border-slate-300 hover:shadow-sm">
                                             <div className="flex justify-between items-start">
-                                                <span className="font-bold text-slate-800">{log.action}</span>
-                                                <span className="text-xs text-slate-400">{new Date(log.created_at).toLocaleString()}</span>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white">
+                                                        <History className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-black text-slate-900 uppercase tracking-tight">{log.action}</span>
+                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{log.resource_type}</span>
+                                                            <span className="text-[10px] text-slate-400 font-bold">ID: {log.resource_id?.substring(0, 8)}...</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight">{new Date(log.created_at).toLocaleString()}</span>
                                             </div>
-                                            <div className="flex justify-between text-xs text-slate-500 mt-1">
-                                                <span className="bg-slate-100 px-2 py-0.5 rounded">{log.resource_type}: {log.resource_id}</span>
-                                                <span>Actor: {log.actor_client_id}</span>
+                                            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 rounded-xl border border-dotted border-slate-200">
+                                                <div className="flex items-center gap-2">
+                                                    <User className="w-3 h-3 text-slate-400" />
+                                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Actor</p>
+                                                </div>
+                                                <p className="text-[10px] font-black text-slate-700">{log.actor_client_id}</p>
                                             </div>
                                         </div>
                                     ))}
-                                    {(!auditData.logs || auditData.logs.length === 0) && <p className="text-slate-500 text-sm">No audit logs found.</p>}
+                                    {(!auditData.logs || auditData.logs.length === 0) && (
+                                        <div className="flex flex-col items-center justify-center py-20 text-slate-300">
+                                            <History className="w-12 h-12 mb-4 opacity-10" />
+                                            <p className="font-black text-sm uppercase tracking-widest">No audit history found</p>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

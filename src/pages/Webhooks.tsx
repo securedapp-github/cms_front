@@ -155,7 +155,7 @@ export default function Webhooks() {
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-1.5">
                                                 <span
-                                                    className="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md border border-slate-200"
+                                                    className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md border border-slate-200"
                                                     title={webhook.id}
                                                 >
                                                     #{webhook.id.substring(0, 8)}
@@ -312,7 +312,7 @@ export default function Webhooks() {
                                 <h3 className="text-xl font-bold text-slate-900">Webhook Details</h3>
                                 <div className="flex items-center gap-1.5 mt-1">
                                     <span
-                                        className="text-xs font-mono font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200"
+                                        className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200"
                                         title={selectedWebhook.id}
                                     >
                                         #{selectedWebhook.id.substring(0, 12)}
@@ -333,7 +333,7 @@ export default function Webhooks() {
 
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Endpoint URL</label>
-                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 font-mono text-xs break-all text-slate-600 font-bold leading-relaxed">
+                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-xs break-all text-slate-600 font-bold leading-relaxed">
                                     {selectedWebhook.url}
                                 </div>
                             </div>

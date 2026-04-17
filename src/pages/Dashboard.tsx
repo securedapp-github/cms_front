@@ -158,7 +158,7 @@ const Dashboard = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <code className="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded font-mono font-bold">
+                                            <code className="text-[10px] bg-slate-100 text-slate-600 px-2 py-1 rounded font-bold">
                                                 {activity.actor_client_id ? activity.actor_client_id.substring(0, 13) + '...' : 'System'}
                                             </code>
                                         </td>

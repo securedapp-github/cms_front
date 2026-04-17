@@ -20,7 +20,10 @@ import {
     Database,
     Globe,
     MessageSquare,
-    CreditCard
+    CreditCard,
+    Star,
+    AlertCircle,
+    HeadphonesIcon
 } from 'lucide-react';
 import useSWR from 'swr';
 import { appsApi } from '../api/appsApi';
@@ -64,12 +67,14 @@ const DashboardLayout = () => {
         }
     }, [user, updateUserRole, logout, navigate]);
 
-    // Fetch apps
-    const { data: appsData } = useSWR('tenant/apps', () => appsApi.listApps());
+    const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
+
+    // Fetch apps (Skip for Super Admin)
+    const { data: appsData } = useSWR(!isSuperAdmin ? 'tenant/apps' : null, () => appsApi.listApps());
     const apps = appsData?.apps || [];
 
-    // Fetch tenant metadata
-    const { data: tenantData } = useSWR('tenant/me', () => tenantApi.getCurrentTenant());
+    // Fetch tenant metadata (Skip for Super Admin)
+    const { data: tenantData } = useSWR(!isSuperAdmin ? 'tenant/me' : null, () => tenantApi.getCurrentTenant());
 
     useEffect(() => {
         if (tenantData) {
@@ -98,25 +103,36 @@ const DashboardLayout = () => {
         navigate('/');
     };
 
+    // Redirect Super Admin if on tenant-specific route
+    useEffect(() => {
+        const tenantRoutes = ['/dashboard', '/consents', '/purposes', '/policy-versions', '/clients', '/audit-logs', '/dsr-requests', '/tenant', '/apps', '/api-keys', '/webhooks', '/pricing', '/data-catalog'];
+        if (isSuperAdmin && tenantRoutes.some(route => location.pathname.startsWith(route))) {
+            navigate('/platform/dashboard', { replace: true });
+        }
+    }, [isSuperAdmin, location.pathname, navigate]);
+
     const navItems = [
-        { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, visible: true },
-        { label: 'Apps', path: '/apps', icon: AppWindow, visible: canViewManageApps(user?.role) && user?.role !== ROLES.SUPER_ADMIN },
-        { label: 'Consents', path: '/consents', icon: ShieldCheck, visible: true },
-        { label: 'Purposes', path: '/purposes', icon: BookOpen, visible: true },
-        { label: 'Policy Versions', path: '/policy-versions', icon: FileText, visible: true },
-        { label: 'Clients', path: '/clients', icon: Users, visible: true },
-        { label: 'Data Catalog', path: '/data-catalog', icon: Database, visible: user?.role !== ROLES.SUPER_ADMIN },
-        { label: 'Webhooks', path: '/webhooks', icon: Webhook, visible: canViewSensitiveConfig(user?.role) && user?.role !== ROLES.SUPER_ADMIN },
-        { label: 'DSR Requests', path: '/dsr-requests', icon: MessageSquare, visible: true },
-        { label: 'Audit Logs', path: '/audit-logs', icon: History, visible: canViewAudit(user?.role) },
-        { label: 'API Keys', path: '/api-keys', icon: Key, visible: canViewSensitiveConfig(user?.role) },
-        { label: 'Pricing', path: '/pricing', icon: CreditCard, visible: canManageOrgRoles(user?.role) && user?.role !== ROLES.SUPER_ADMIN },
-        { label: 'Tenant Profile', path: '/tenant', icon: Settings, visible: true },
+        { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, visible: !isSuperAdmin },
+        { label: 'Apps', path: '/apps', icon: AppWindow, visible: canViewManageApps(user?.role) && !isSuperAdmin },
+        { label: 'Consents', path: '/consents', icon: ShieldCheck, visible: !isSuperAdmin },
+        { label: 'Purposes', path: '/purposes', icon: BookOpen, visible: !isSuperAdmin },
+        { label: 'Policy Versions', path: '/policy-versions', icon: FileText, visible: !isSuperAdmin },
+        { label: 'Clients', path: '/clients', icon: Users, visible: !isSuperAdmin },
+        { label: 'Data Catalog', path: '/data-catalog', icon: Database, visible: !isSuperAdmin },
+        { label: 'Webhooks', path: '/webhooks', icon: Webhook, visible: canViewSensitiveConfig(user?.role) && !isSuperAdmin },
+        { label: 'DSR Requests', path: '/dsr-requests', icon: MessageSquare, visible: !isSuperAdmin },
+        { label: 'Audit Logs', path: '/audit-logs', icon: History, visible: canViewAudit(user?.role) && !isSuperAdmin },
+        { label: 'API Keys', path: '/api-keys', icon: Key, visible: canViewSensitiveConfig(user?.role) && !isSuperAdmin },
+        { label: 'Pricing', path: '/pricing', icon: CreditCard, visible: canManageOrgRoles(user?.role) && !isSuperAdmin },
+        { label: 'Contact Support', path: '/contact', icon: HeadphonesIcon, visible: !isSuperAdmin },
+        { label: 'Tenant Profile', path: '/tenant', icon: Settings, visible: !isSuperAdmin },
     ].filter(item => item.visible);
 
     const platformNavItems = [
         { label: 'Platform Dashboard', path: '/platform/dashboard', icon: LayoutDashboard },
         { label: 'Organizations', path: '/platform/orgs', icon: Building2 },
+        { label: 'Grievances', path: '/platform/grievances', icon: AlertCircle },
+        { label: 'Feedback', path: '/platform/feedback', icon: Star },
     ];
 
     return (
@@ -155,9 +171,16 @@ const DashboardLayout = () => {
 
                     {canViewPlatformLevel(user?.role) && (
                         <>
-                            <div className="pt-4 pb-2">
-                                <p className="px-3 text-xs font-bold uppercase tracking-wider text-slate-400">Platform</p>
-                            </div>
+                            {!isSuperAdmin && (
+                                <div className="pt-4 pb-2">
+                                    <p className="px-3 text-xs font-bold uppercase tracking-wider text-slate-400">Platform</p>
+                                </div>
+                            )}
+                            {isSuperAdmin && (
+                                <div className="pt-2 pb-2">
+                                    <p className="px-3 text-xs font-black uppercase tracking-[0.2em] text-indigo-400 bg-indigo-50/50 py-2 rounded-lg mb-2">Platform Management</p>
+                                </div>
+                            )}
                             {platformNavItems.map((item) => (
                                 <NavLink
                                     key={item.path}
@@ -215,35 +238,41 @@ const DashboardLayout = () => {
                     </div>
 
                     <div className="flex items-center space-x-5">
-                        {/* App Selector */}
-                        <div className="flex items-center space-x-2 mr-2">
-                            <div className="hidden sm:flex flex-col items-end mr-2">
-                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">Managed App</span>
-                            </div>
-                            <div className="relative group">
-                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-indigo-500 z-10" />
-                                <select
-                                    value={selectedAppId || ''}
-                                    onChange={(e) => setSelectedAppId(e.target.value)}
-                                    className="pl-9 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer appearance-none min-w-[140px]"
-                                >
-                                    <option value="" disabled>Select an App</option>
-                                    {apps.map((app) => (
-                                        <option key={app.id} value={app.id}>
-                                            {app.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 rotate-90 pointer-events-none" />
-                            </div>
-                        </div>
+                        {!isSuperAdmin && (
+                            <>
+                                {/* App Selector */}
+                                <div className="flex items-center space-x-2 mr-2">
+                                    <div className="hidden sm:flex flex-col items-end mr-2">
+                                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none">Managed App</span>
+                                    </div>
+                                    <div className="relative group">
+                                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-indigo-500 z-10" />
+                                        <select
+                                            value={selectedAppId || ''}
+                                            onChange={(e) => setSelectedAppId(e.target.value)}
+                                            className="pl-9 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer appearance-none min-w-[140px]"
+                                        >
+                                            <option value="" disabled>Select an App</option>
+                                            {apps.map((app) => (
+                                                <option key={app.id} value={app.id}>
+                                                    {app.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 rotate-90 pointer-events-none" />
+                                    </div>
+                                </div>
 
-                        <div className="hidden md:flex flex-col items-end border-r border-slate-200 pr-5 mr-2">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Active Tenant</span>
-                            <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
-                                {tenantMetadata?.organizationName || (tenantId ? tenantId.substring(0, 12) : 'No Tenant')}
-                            </span>
-                        </div>
+                                <div className="hidden md:flex flex-col items-end border-r border-slate-200 pr-5 mr-2">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">
+                                        {isSuperAdmin ? 'Administrative Context' : 'Active Tenant'}
+                                    </span>
+                                    <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                                        {isSuperAdmin ? 'Global Admin' : (tenantMetadata?.organizationName || (tenantId ? tenantId.substring(0, 12) : 'No Tenant'))}
+                                    </span>
+                                </div>
+                            </>
+                        )}
                         <button className="relative p-2 text-slate-400 hover:bg-slate-50 hover:text-indigo-600 rounded-full transition-all duration-200 group">
                             <Bell className="w-5 h-5 group-hover:scale-110 transition-transform" />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-2 ring-transparent group-hover:ring-red-100 transition-all"></span>

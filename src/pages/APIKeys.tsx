@@ -93,7 +93,7 @@ const APIKeys = () => {
                 <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 space-y-2">
                     <p className="text-sm font-bold text-emerald-900">New API Key (shown once)</p>
                     <div className="flex items-center gap-2">
-                        <code className="flex-1 text-xs font-mono bg-white border border-emerald-200 rounded-lg px-3 py-2 text-emerald-800 break-all">
+                        <code className="flex-1 text-xs bg-white border border-emerald-200 rounded-lg px-3 py-2 text-emerald-800 break-all">
                             {createdKey}
                         </code>
                         <button

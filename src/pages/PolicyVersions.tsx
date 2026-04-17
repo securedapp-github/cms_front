@@ -128,7 +128,7 @@ const PolicyVersions = () => {
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <span
-                                                    className="font-mono text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200"
+                                                    className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200"
                                                     title={policy.id}
                                                 >
                                                     {truncateId(policy.id)}
@@ -189,7 +189,7 @@ const PolicyVersions = () => {
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Policy Version ID</p>
                                     <div className="flex items-center gap-1.5">
                                         <span
-                                            className="font-mono text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded-md border border-slate-200"
+                                            className="text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded-md border border-slate-200"
                                             title={selectedPolicy.id}
                                         >
                                             {truncateId(selectedPolicy.id)}
@@ -215,7 +215,7 @@ const PolicyVersions = () => {
                         <div className="flex-1 overflow-y-auto p-8 min-h-0">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Policy Content</p>
                             {selectedPolicy.policy_text ? (
-                                <pre className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-xs font-mono text-slate-700 leading-relaxed whitespace-pre-wrap break-words">
+                                <pre className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-xs text-slate-700 leading-relaxed whitespace-pre-wrap break-words">
                                     {selectedPolicy.policy_text}
                                 </pre>
                             ) : (
@@ -272,7 +272,7 @@ const PolicyVersions = () => {
                                         required
                                         placeholder="Paste your policy content here..."
                                         rows={12}
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all resize-none font-mono"
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all resize-none"
                                         value={formData.policy_text}
                                         onChange={(e) => setFormData({ ...formData, policy_text: e.target.value })}
                                     />

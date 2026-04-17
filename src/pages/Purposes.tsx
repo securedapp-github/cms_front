@@ -169,7 +169,7 @@ const Purposes = () => {
                             </div>
                             <div className="flex items-center gap-1">
                                 <span
-                                    className="font-mono text-[10px] text-slate-400 font-bold"
+                                    className="text-[10px] text-slate-400 font-bold"
                                     title={purpose.id}
                                 >
                                     {purpose.id.substring(0, 8)}…
@@ -235,7 +235,7 @@ const Purposes = () => {
                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Required Data Elements</label>
                                     <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 max-h-40 overflow-y-auto space-y-2">
                                         {catalog.length === 0 ? (
-                                            <p className="text-xs text-slate-400 italic">No data elements available in catalog.</p>
+                                            <p className="text-xs text-slate-400">No data elements available in catalog.</p>
                                         ) : (
                                             catalog.map((entry) => (
                                                 <div key={entry.id} className="flex items-center gap-3">

@@ -49,10 +49,10 @@ export const PublicRoute = () => {
 export const RoleGuard = ({ allowedRoles }: { allowedRoles: string[] }) => {
     const { user } = useAuthStore();
     
-    // If we don't have a role, we'll assume it's still loading (DashboardLayout handles it)
-    // or if we do and it's not in the allowed list, we redirect.
     if (user?.role && !allowedRoles.includes(user.role)) {
-        return <Navigate to="/dashboard" replace />;
+        // Redirect Super Admin to platform level, others to tenant level
+        const redirectPath = user.role === 'super_admin' ? '/platform/dashboard' : '/dashboard';
+        return <Navigate to={redirectPath} replace />;
     }
 
     return <Outlet />;

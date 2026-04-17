@@ -276,7 +276,7 @@ const Onboarding = () => {
                                     </>
                                 )}
                             </button>
-                            <p className="mt-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">
+                            <p className="mt-4 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                 Secure CMS - DPDP Compliant Data Management
                             </p>
                         </div>

@@ -138,7 +138,7 @@ const AuditLogs = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-slate-900 font-mono">
+                                                <span className="text-sm font-bold text-slate-900">
                                                     {new Date(log.created_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                                                 </span>
                                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">

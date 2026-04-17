@@ -192,15 +192,6 @@ const Pricing = () => {
                                 )}
                             </div>
 
-                            <button 
-                                className={`w-full py-[12px] rounded-[10px] text-[14px] font-semibold transition-all duration-200 active:scale-[0.98]
-                                    ${plan.highlight 
-                                        ? "bg-[#5b5ce2] text-white hover:bg-[#4f46e5] shadow-md shadow-indigo-100" 
-                                        : "bg-slate-50 text-[#111827] border border-[#e5e7eb] hover:bg-white hover:border-[#5b5ce2] hover:text-[#5b5ce2]"}
-                                `}
-                            >
-                                {plan.price === 'Free' ? 'Get Started' : 'Start Trial'}
-                            </button>
                         </div>
                     ))}
                 </div>

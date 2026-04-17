@@ -115,7 +115,7 @@ export default function AppsList() {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-1.5">
                                                 <span
-                                                    className="font-mono text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200"
+                                                    className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-md border border-slate-200"
                                                     title={app.id}
                                                 >
                                                     {truncateId(app.id)}
@@ -123,7 +123,7 @@ export default function AppsList() {
                                                 <CopyButton text={app.id} />
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 text-slate-600 font-mono text-xs">{app.slug}</td>
+                                        <td className="px-6 py-4 text-slate-600 text-xs">{app.slug}</td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg border ${app.consent_flow === 'redirect' ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-purple-50 text-purple-700 border-purple-100'}`}>
                                                 {app.consent_flow || 'embedded'}

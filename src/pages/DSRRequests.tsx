@@ -328,7 +328,7 @@ export default function DSRRequests() {
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center gap-1.5">
                                                     <span
-                                                        className="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md border border-slate-200"
+                                                        className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md border border-slate-200"
                                                         title={request.id}
                                                     >
                                                         #{request.id.substring(0, 8)}
@@ -517,7 +517,7 @@ export default function DSRRequests() {
                                     <span className="text-[10px] font-bold text-slate-300">Optional attribute block</span>
                                 </div>
                                 <textarea
-                                    className="w-full h-32 px-6 py-4.5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-mono font-bold focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
+                                    className="w-full h-32 px-6 py-4.5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-bold focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
                                     placeholder='{"key": "value"}'
                                     value={metadataJSON}
                                     onChange={(e) => setMetadataJSON(e.target.value)}
@@ -615,7 +615,7 @@ export default function DSRRequests() {
                                                     </div>
                                                     {entry.metadata && (
                                                         <div className="mt-4 p-4 bg-slate-50/80 rounded-2xl border border-slate-100 overflow-hidden">
-                                                            <pre className="text-[10px] font-mono font-black text-slate-500 overflow-x-auto">
+                                                            <pre className="text-[10px] font-black text-slate-500 overflow-x-auto">
                                                                 {JSON.stringify(entry.metadata, null, 2)}
                                                             </pre>
                                                         </div>

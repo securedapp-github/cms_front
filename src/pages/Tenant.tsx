@@ -215,7 +215,7 @@ const Tenant = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">CIN</label>
-                                        <p className="text-sm font-bold text-slate-700 font-mono tracking-tight">
+                                        <p className="text-sm font-bold text-slate-700 tracking-tight">
                                             {tenantData?.legal_info?.cin ? tenantData.legal_info.cin : (
                                                 <span className="text-muted">No CIN provided. Add details in profile settings.</span>
                                             )}
@@ -223,7 +223,7 @@ const Tenant = () => {
                                     </div>
                                     <div className="space-y-1">
                                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">GSTIN</label>
-                                        <p className="text-sm font-bold text-slate-700 font-mono tracking-tight">
+                                        <p className="text-sm font-bold text-slate-700 tracking-tight">
                                             {tenantData?.legal_info?.gst ? tenantData.legal_info.gst : (
                                                 <span className="text-muted">No GSTIN provided. Add details in profile settings.</span>
                                             )}
@@ -318,7 +318,7 @@ const Tenant = () => {
                             <div>
                                 <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Tenant Primary ID</label>
                                 <div className="flex items-center gap-2 p-3 bg-white/5 rounded-2xl border border-white/10">
-                                    <code className="text-sm font-mono font-bold text-indigo-300 flex-1 truncate">{tenantId}</code>
+                                    <code className="text-sm font-bold text-indigo-300 flex-1 truncate">{tenantId}</code>
                                     <button 
                                         type="button"
                                         onClick={() => {

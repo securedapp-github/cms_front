@@ -3,11 +3,19 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply antialiased text-slate-800 bg-slate-50;
+    @apply antialiased text-slate-800 bg-slate-50 font-sans;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   .text-muted {
-    @apply text-slate-400 italic font-medium;
+    @apply text-slate-400 font-medium;
   }
 }

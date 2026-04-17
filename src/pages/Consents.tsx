@@ -19,6 +19,7 @@ import { useAppStore } from '../store/appStore';
 import { consentApi } from '../api/consentApi';
 import { purposeApi, Purpose } from '../api/purposeApi';
 import { policyApi, PolicyVersion } from '../api/policyApi';
+import { appsApi, AppConfig } from '../api/appsApi';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { canManageConsentState } from '../utils/rbac';
@@ -79,6 +80,13 @@ const Consents = () => {
         queryFn: () => policyApi.getPolicyVersions(selectedAppId!),
         enabled: !!selectedAppId
     });
+
+    const { data: appsData } = useQuery({
+        queryKey: ['apps'],
+        queryFn: () => appsApi.listApps()
+    });
+    const selectedApp = (appsData?.apps || []).find(a => a.id === selectedAppId);
+    const isRedirectFlow = selectedApp?.consent_flow === 'redirect';
 
     const isEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
     
@@ -240,13 +248,26 @@ const Consents = () => {
                     <p className="text-slate-500 font-medium text-sm">Monitor and manage user consent records across all purposes.</p>
                 </div>
                 {canManageConsentState(user?.role) && (
-                    <button
-                        onClick={handleOpenCreateModal}
-                        className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-200 active:scale-95"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Record New Consent
-                    </button>
+                    <div className="relative group">
+                        <button
+                            onClick={handleOpenCreateModal}
+                            disabled={isRedirectFlow}
+                            className={`inline-flex items-center px-4 py-2 text-sm font-bold rounded-xl transition-all shadow-lg active:scale-95 ${
+                                isRedirectFlow 
+                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200' 
+                                    : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-200'
+                            }`}
+                        >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Record New Consent
+                        </button>
+                        {isRedirectFlow && (
+                            <div className="absolute top-full right-0 mt-2 w-64 p-3 bg-slate-900 text-white text-[10px] font-bold rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 border border-slate-700 uppercase tracking-widest">
+                                <ShieldAlert className="w-3.5 h-3.5 text-amber-400 inline mr-2 mb-0.5" />
+                                This app uses Redirect flow. Manual recording via Embedded API is restricted for compliance.
+                            </div>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -337,7 +358,7 @@ const Consents = () => {
                                                     <User className="w-4 h-4" />
                                                 </div>
                                                 <span 
-                                                    className="text-sm font-bold text-slate-900 font-mono"
+                                                    className="text-sm font-bold text-slate-900"
                                                     title={consent.userId}
                                                 >
                                                     {truncateHash(consent.userId)}
@@ -425,7 +446,7 @@ const Consents = () => {
                                     <div className="space-y-4">
                                         <div>
                                             <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Identity Hash</span>
-                                            <span className="text-sm font-bold text-slate-900 font-mono break-all bg-slate-100 p-2 rounded-lg block border border-slate-200">
+                                            <span className="text-sm font-bold text-slate-900 break-all bg-slate-100 p-2 rounded-lg block border border-slate-200">
                                                 {selectedConsent.userId}
                                             </span>
                                         </div>
@@ -484,7 +505,7 @@ const Consents = () => {
                                                 <div className="space-y-2">
                                                     {selectedConsent.purpose_decisions.map((decision, i) => (
                                                         <div key={i} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg text-xs font-medium">
-                                                            <span className="font-mono text-slate-600">{decision.purpose_id}</span>
+                                                            <span className="text-slate-600">{decision.purpose_id}</span>
                                                             <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                                                                 decision.decision === 'GRANTED' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
                                                             }`}>
@@ -590,7 +611,7 @@ const Consents = () => {
                                                 <input
                                                     type="email"
                                                     placeholder="user@example.com"
-                                                    className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-mono"
+                                                    className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
                                                     value={newConsentEmail}
                                                     onChange={(e) => setNewConsentEmail(e.target.value)}
                                                 />
@@ -605,7 +626,7 @@ const Consents = () => {
                                                 <input
                                                     type="text"
                                                     placeholder="+1234567890"
-                                                    className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-mono"
+                                                    className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
                                                     value={newConsentPhone}
                                                     onChange={(e) => setNewConsentPhone(e.target.value)}
                                                 />
@@ -621,11 +642,11 @@ const Consents = () => {
                                                 <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 shrink-0">
                                                     <ShieldCheck className="w-4 h-4" />
                                                 </div>
-                                                <code className="text-[10px] font-bold text-indigo-300 break-all font-mono">
+                                                <code className="text-[10px] font-bold text-indigo-300 break-all">
                                                     {identityHash}
                                                 </code>
                                             </div>
-                                            <p className="text-[9px] font-bold text-slate-400 ml-1 italic">
+                                            <p className="text-[9px] font-bold text-slate-400 ml-1">
                                                 * This SHA-256 hash is a preview. The server will derive the final immutable identity.
                                             </p>
                                         </div>
@@ -635,7 +656,7 @@ const Consents = () => {
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Consent Purpose(s)</label>
                                         {purposes.length === 0 ? (
-                                            <p className="text-xs text-slate-400 italic px-1">No purposes found. Please create one first.</p>
+                                            <p className="text-xs text-slate-400 px-1">No purposes found. Please create one first.</p>
                                         ) : (
                                             <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl max-h-44 overflow-y-auto space-y-1">
                                                 {purposes.map((p) => {

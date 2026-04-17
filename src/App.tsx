@@ -21,7 +21,10 @@ import Pricing from './pages/Pricing';
 import OrgsList from './pages/Platform/OrgsList';
 import OrgDetails from './pages/Platform/OrgDetails';
 import PlatformDashboard from './pages/Platform/PlatformDashboard';
+import PlatformGrievances from './pages/Platform/PlatformGrievances';
+import PlatformFeedback from './pages/Platform/PlatformFeedback';
 import RBACTest from './pages/Admin/RBACTest';
+import ContactUs from './pages/ContactUs';
 import { Toaster } from 'react-hot-toast';
 
 import RedirectConsent from './pages/consent/RedirectConsent';
@@ -51,14 +54,17 @@ function App() {
           {/* Protected SaaS routes */}
           <Route element={<ProtectedRoute />}>
             <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/consents" element={<Consents />} />
-              <Route path="/purposes" element={<Purposes />} />
-              <Route path="/policy-versions" element={<PolicyVersions />} />
-              <Route path="/clients" element={<Clients />} />
-              <Route path="/audit-logs" element={<AuditLogs />} />
-              <Route path="/tenant" element={<Tenant />} />
-              <Route path="/dsr-requests" element={<DSRRequests />} />
+              {/* Tenant-level routes (Hidden/Blocked for Super Admin) */}
+              <Route element={<RoleGuard allowedRoles={['org_admin', 'operations_manager', 'auditor_compliance']} />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/consents" element={<Consents />} />
+                <Route path="/purposes" element={<Purposes />} />
+                <Route path="/policy-versions" element={<PolicyVersions />} />
+                <Route path="/clients" element={<Clients />} />
+                <Route path="/audit-logs" element={<AuditLogs />} />
+                <Route path="/tenant" element={<Tenant />} />
+                <Route path="/dsr-requests" element={<DSRRequests />} />
+              </Route>
 
               {/* Org Admin only routes (Hidden from Super Admin) */}
               <Route element={<RoleGuard allowedRoles={['org_admin']} />}>
@@ -67,6 +73,7 @@ function App() {
                 <Route path="/webhooks" element={<Webhooks />} />
                 <Route path="/apps" element={<Apps />} />
                 <Route path="/pricing" element={<Pricing />} />
+                <Route path="/contact" element={<ContactUs />} />
               </Route>
 
               {/* Admin test route (Visible to both) */}
@@ -79,6 +86,8 @@ function App() {
                 <Route path="/platform/dashboard" element={<PlatformDashboard />} />
                 <Route path="/platform/orgs" element={<OrgsList />} />
                 <Route path="/platform/orgs/:id" element={<OrgDetails />} />
+                <Route path="/platform/grievances" element={<PlatformGrievances />} />
+                <Route path="/platform/feedback" element={<PlatformFeedback />} />
               </Route>
             </Route>
           </Route>
