@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate as globalMutate } from 'swr';
 import { dsrApi, DSRRequest, DSRTimelineEntry } from '../api/dsrApi';
 import {
     Plus,
@@ -20,12 +20,15 @@ import {
     Info,
     Download,
     ChevronRight,
+    ChevronDown,
+    ArrowRight,
     AppWindow
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { CopyButton } from '../components/ui/CopyButton';
 import { useAuthStore } from '../store/authStore';
 import { canManageDSR } from '../utils/rbac';
+import { useAppStore } from '../store/appStore';
 
 const STATUS_CONFIG: Record<string, { label: string, color: string, icon: any }> = {
     pending: { label: 'Pending', color: 'blue', icon: Clock },
@@ -46,16 +49,15 @@ const REQUEST_TYPES = [
     { id: 'portability', label: 'Data Portability' },
 ];
 
-import { useAppStore } from '../store/appStore';
-
 export default function DSRRequests() {
     const { user } = useAuthStore();
     const { selectedAppId } = useAppStore();
     
-    // Fetch DSR Requests
+    // Fetch DSR Requests with 10s polling
     const { data: requests = [], isLoading: loading, error: swrError, mutate } = useSWR(
         selectedAppId ? ['dsr', selectedAppId] : null,
-        ([_, appId]) => dsrApi.getDsrRequests(appId)
+        ([_, appId]) => dsrApi.getDsrRequests(appId),
+        { refreshInterval: 10000 }
     );
     
     const error = swrError?.response?.data?.error || null;
@@ -95,6 +97,8 @@ export default function DSRRequests() {
             setShowCreateModal(false);
             setUserId('');
             mutate();
+            globalMutate('dashboard-stats');
+            globalMutate('recent-activity');
         } catch (error: any) {
             toast.error(error.response?.data?.error || 'Failed to create request');
         } finally {
@@ -142,6 +146,8 @@ export default function DSRRequests() {
             toast.success('Status updated successfully');
             setShowUpdateModal(false);
             mutate();
+            globalMutate('dashboard-stats');
+            globalMutate('recent-activity');
             if (selectedRequest) {
                 const updated = await dsrApi.getDsrStatus(selectedAppId, selectedRequest.id);
                 setSelectedRequest(updated.dsr);
@@ -215,8 +221,8 @@ export default function DSRRequests() {
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-900 tracking-tight">DSR Requests</h2>
-                    <p className="text-slate-500 font-medium text-sm">Manage and track data subject privacy requests.</p>
+                    <h2 className="text-2xl font-bold text-slate-900 tracking-tight">DSR Processing Queue</h2>
+                    <p className="text-slate-500 font-medium text-sm">Review and process data subject requests for the selected app.</p>
                 </div>
                 {canManageDSR(user?.role) && (
                     <button
@@ -277,11 +283,11 @@ export default function DSRRequests() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100 font-sans">
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">DSR ID</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">User Details</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
+                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Request ID</th>
+                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">User Identity</th>
+                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Request Type</th>
                                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Current Status</th>
-                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Requested On</th>
+                                <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Timestamp</th>
                                 <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
                             </tr>
                         </thead>
@@ -316,7 +322,7 @@ export default function DSRRequests() {
                                             <Database className="w-10 h-10 text-slate-300" />
                                         </div>
                                         <p className="text-lg font-bold text-slate-900">Queue is empty</p>
-                                        <p className="text-sm text-slate-500 mt-2">No data subject requests have been submitted yet.</p>
+                                        <p className="text-sm text-slate-500 mt-2">No data subject requests found for the currently selected Managed App.</p>
                                     </td>
                                 </tr>
                             ) : (
@@ -343,7 +349,7 @@ export default function DSRRequests() {
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-bold text-slate-900 truncate max-w-[150px]">{request.user_id}</p>
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Identified User</p>
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hashed UserID</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -497,47 +503,73 @@ export default function DSRRequests() {
                             </button>
                         </div>
 
-                        <form onSubmit={handleUpdateStatus} className="p-10 space-y-8">
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Lifecycle Status</label>
-                                <select
-                                    className="w-full px-6 py-4.5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-sm font-bold focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all appearance-none"
-                                    value={newStatus}
-                                    onChange={(e) => setNewStatus(e.target.value)}
-                                >
-                                    {Object.entries(STATUS_CONFIG).map(([key, info]) => (
-                                        <option key={key} value={key}>{info.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between ml-1">
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Metadata payload (JSON)</label>
-                                    <span className="text-[10px] font-bold text-slate-300">Optional attribute block</span>
+                        <form onSubmit={handleUpdateStatus} className="p-10 space-y-10">
+                            <div className="space-y-4">
+                                <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]"></span>
+                                    New Lifecycle Status
+                                </label>
+                                <div className="relative group">
+                                    <select
+                                        className="w-full pl-8 pr-12 py-5 bg-slate-50 border-2 border-slate-100 rounded-[2rem] text-sm font-bold text-slate-700 focus:ring-[12px] focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all appearance-none cursor-pointer hover:bg-white hover:border-slate-200"
+                                        value={newStatus}
+                                        onChange={(e) => setNewStatus(e.target.value)}
+                                    >
+                                        {Object.entries(STATUS_CONFIG).map(([key, info]) => (
+                                            <option key={key} value={key} className="font-bold">{info.label}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none group-hover:translate-y-[-40%] transition-transform">
+                                        <ChevronDown className="w-5 h-5 text-slate-400" />
+                                    </div>
+                                    <div className="absolute left-6 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <div className={`w-2 h-2 rounded-full bg-${getStatusInfo(newStatus).color}-500 shadow-[0_0_8px_rgba(var(--color-rgb),0.5)] transition-all`} />
+                                    </div>
                                 </div>
-                                <textarea
-                                    className="w-full h-32 px-6 py-4.5 bg-slate-50 border border-slate-200 rounded-[1.5rem] text-xs font-bold focus:ring-8 focus:ring-indigo-500/5 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
-                                    placeholder='{"key": "value"}'
-                                    value={metadataJSON}
-                                    onChange={(e) => setMetadataJSON(e.target.value)}
-                                />
                             </div>
 
-                            <div className="flex gap-4 pt-4">
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between ml-1">
+                                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-slate-200"></span>
+                                        Metadata payload (JSON)
+                                    </label>
+                                    <span className="text-[10px] font-bold text-slate-300 italic">Optional attribute block</span>
+                                </div>
+                                <div className="relative group">
+                                    <textarea
+                                        className="w-full h-40 px-8 py-6 bg-slate-50 border-2 border-slate-100 rounded-[2.5rem] text-xs font-mono font-medium text-slate-600 focus:ring-[12px] focus:ring-indigo-500/5 focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-300 resize-none hover:bg-white hover:border-slate-200"
+                                        placeholder='{"key": "value"}'
+                                        value={metadataJSON}
+                                        onChange={(e) => setMetadataJSON(e.target.value)}
+                                    />
+                                    <div className="absolute right-6 bottom-6 opacity-20 pointer-events-none">
+                                        <Database className="w-5 h-5 text-slate-400" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-5 pt-2">
                                 <button
                                     type="button"
                                     onClick={() => setShowUpdateModal(false)}
-                                    className="flex-1 py-4.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-black rounded-3xl transition-all active:scale-95 uppercase tracking-widest"
+                                    className="flex-1 py-5 bg-slate-50 hover:bg-slate-100 text-slate-500 text-[11px] font-black rounded-[2rem] transition-all active:scale-[0.97] uppercase tracking-[0.2em] border-2 border-transparent hover:border-slate-200"
                                 >
                                     Dismiss
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isUpdating}
-                                    className="flex-1 py-4.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-black rounded-3xl shadow-xl shadow-emerald-100 transition-all active:scale-95 disabled:opacity-50 inline-flex items-center justify-center uppercase tracking-widest"
+                                    className="flex-[1.5] py-5 bg-[#4f46e5] hover:bg-emerald-600 text-white text-[11px] font-black rounded-[2rem] shadow-xl shadow-indigo-100 hover:shadow-emerald-200/50 transition-all active:scale-[0.97] disabled:opacity-50 inline-flex items-center justify-center uppercase tracking-[0.2em] group"
                                 >
-                                    {isUpdating ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Commit Changes'}
+                                    {isUpdating ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <span className="flex items-center gap-2">
+                                            Commit Changes
+                                            <ArrowRight className="w-4 h-4 translate-x-0 group-hover:translate-x-1 transition-transform" />
+                                        </span>
+                                    )}
                                 </button>
                             </div>
                         </form>

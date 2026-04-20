@@ -17,7 +17,9 @@ export const ROLE_PERMISSIONS: Record<Role, string[]> = {
     "manage_api",
     "view_reports",
     "view_audit_logs",
-    "view_consents"
+    "view_consents",
+    "manage_consents",
+    "handle_requests"
   ],
   operations_manager: [
     "manage_consents",

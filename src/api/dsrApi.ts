@@ -27,7 +27,7 @@ export const dsrApi = {
         return response.data.requests || [];
     },
     createDsrRequest: async (appId: string, data: { user_id: string, type: string }) => {
-        const response = await apiClient.post<DSRRequest>('/dsr/request', { ...data, app_id: appId });
+        const response = await apiClient.post<DSRRequest>(`/tenant/apps/${appId}/dsr/requests`, data);
         return response.data;
     },
     getDsrStatus: async (appId: string, id: string) => {

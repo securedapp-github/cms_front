@@ -104,7 +104,14 @@ export default function RedirectConsent() {
       const data = await res.json();
 
       if (res.ok && data.redirect_url) {
-        window.location.href = data.redirect_url;
+        // Append preferred_language as a query param so the hosted consent page
+        // can read it from the URL and pre-select the correct language
+        let redirectUrl = data.redirect_url;
+        if (data.preferred_language) {
+          const separator = redirectUrl.includes('?') ? '&' : '?';
+          redirectUrl = `${redirectUrl}${separator}lang=${encodeURIComponent(data.preferred_language)}`;
+        }
+        window.location.href = redirectUrl;
       } else {
         toast.error(data.error || 'Failed to generate redirect URL');
       }
