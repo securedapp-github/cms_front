@@ -37,10 +37,13 @@ interface ConsentRecord {
     purposeName: string;
     policyVersion: string;
     currentStatus: 'granted' | 'withdrawn';
-    status: 'ACTIVE' | 'REVOKED' | 'EXPIRED'; // API now returns this
+    status: 'ACTIVE' | 'REVOKED' | 'EXPIRED';
     updatedAt: string;
     purpose_decisions?: ConsentDecision[];
     rejected_purposes?: string[];
+    provider_type?: 'self' | 'guardian';
+    guardian_name?: string;
+    guardian_email?: string;
 }
 
 const Consents = () => {
@@ -350,7 +353,10 @@ const Consents = () => {
                                     <tr
                                         key={consent.id}
                                         className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
-                                        onClick={() => setSelectedConsent(consent)}
+                                        onClick={() => {
+                                            console.log("CONSENT DATA:", consent);
+                                            setSelectedConsent(consent);
+                                        }}
                                     >
                                         <td className="px-6 py-4">
                                             <div className="flex items-center">
@@ -358,10 +364,13 @@ const Consents = () => {
                                                     <User className="w-4 h-4" />
                                                 </div>
                                                 <span 
-                                                    className="text-sm font-bold text-slate-900"
+                                                    className="text-sm font-bold text-slate-900 flex items-center gap-2"
                                                     title={consent.userId}
                                                 >
                                                     {truncateHash(consent.userId)}
+                                                    {consent.provider_type === 'guardian' && (
+                                                        <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[9px] uppercase tracking-wider rounded border border-purple-200" title="Provided by Guardian">Guardian</span>
+                                                    )}
                                                 </span>
                                             </div>
                                         </td>
@@ -442,6 +451,33 @@ const Consents = () => {
                                             {selectedConsent.status}
                                         </span>
                                     </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm font-bold text-slate-500">Provided By</span>
+                                        <div className="flex items-center gap-2">
+                                            {selectedConsent.provider_type === 'guardian' ? (
+                                                <>
+                                                    <span className="px-3 py-1 rounded-full text-xs font-bold border bg-purple-100 text-purple-700 border-purple-200">
+                                                        Guardian
+                                                    </span>
+                                                    {selectedConsent.guardian_name && (
+                                                        <span className="text-xs font-bold text-slate-600">
+                                                            ({selectedConsent.guardian_name})
+                                                        </span>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <span className="px-3 py-1 rounded-full text-xs font-bold border bg-slate-100 text-slate-700 border-slate-200">
+                                                    Self
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {selectedConsent.provider_type === 'guardian' && selectedConsent.guardian_email && (
+                                        <div className="mt-1 p-2 bg-purple-50/50 border border-purple-100 rounded-xl flex items-center justify-between">
+                                            <span className="text-[10px] font-bold text-purple-400 uppercase">Guardian Email</span>
+                                            <span className="text-xs font-bold text-slate-900">{selectedConsent.guardian_email}</span>
+                                        </div>
+                                    )}
                                     <div className="h-px bg-slate-200"></div>
                                     <div className="space-y-4">
                                         <div>

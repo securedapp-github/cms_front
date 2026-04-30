@@ -142,11 +142,11 @@ const Clients = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${['owner', 'super_admin', 'org_admin'].includes(client.role)
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${['owner', 'super_admin', 'org_admin'].includes(client.role || '')
                                                     ? 'bg-indigo-50 text-indigo-700 border-indigo-100'
                                                     : 'bg-emerald-50 text-emerald-700 border-emerald-100'
                                                 }`}>
-                                                {['owner', 'super_admin'].includes(client.role) ? 'System' : 'Active'}
+                                                {['owner', 'super_admin'].includes(client.role || '') ? 'System' : 'Active'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">

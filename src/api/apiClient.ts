@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 
 const apiClient = axios.create({
     baseURL: import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'https://cmsbe.securedapp.io',
+    withCredentials: true,
 });
 
 apiClient.interceptors.request.use(
@@ -11,9 +12,9 @@ apiClient.interceptors.request.use(
         const onboardingToken = localStorage.getItem('onboardingToken');
 
         if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+            config.headers.set('Authorization', `Bearer ${token}`);
         } else if (onboardingToken) {
-            config.headers.Authorization = `Bearer ${onboardingToken}`;
+            config.headers.set('Authorization', `Bearer ${onboardingToken}`);
         }
         return config;
     },
