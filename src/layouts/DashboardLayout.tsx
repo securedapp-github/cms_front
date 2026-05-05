@@ -147,7 +147,7 @@ const DashboardLayout = () => {
                     />
                 </div>
 
-                <nav className="flex-1 py-8 px-4 space-y-1">
+                <nav className="flex-1 py-8 px-4 space-y-1 overflow-y-auto custom-scrollbar">
                     {navItems.map((item) => (
                         <NavLink
                             key={item.path}
@@ -205,7 +205,7 @@ const DashboardLayout = () => {
                     )}
                 </nav>
 
-                <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+                <div className="p-4 border-t border-slate-100 bg-white mt-auto">
                     <div className="flex items-center space-x-3 mb-4 p-2">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
                             {user?.name?.charAt(0) || 'U'}

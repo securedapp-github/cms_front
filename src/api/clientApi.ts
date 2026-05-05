@@ -5,6 +5,7 @@ export interface Client {
     name: string;
     email?: string;
     role?: string;
+    status?: string;
 }
 
 export interface InviteClientRequest {
@@ -21,4 +22,16 @@ export const clientApi = {
         const response = await apiClient.post('/clients/invite', data);
         return response.data;
     },
+    updateClientRole: async (id: string, role: string) => {
+        const response = await apiClient.patch(`/clients/${id}/role`, { role });
+        return response.data;
+    },
+    updateClientStatus: async (id: string, status: 'active' | 'suspended') => {
+        const response = await apiClient.patch(`/clients/${id}/status`, { status });
+        return response.data;
+    },
+    deleteClient: async (id: string) => {
+        const response = await apiClient.delete(`/clients/${id}`);
+        return response.data;
+    }
 };

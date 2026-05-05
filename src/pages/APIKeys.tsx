@@ -23,6 +23,8 @@ const APIKeys = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [newKeyData, setNewKeyData] = useState({ name: '' });
     const [createdKey, setCreatedKey] = useState<string | null>(null);
+    const [keyToRevoke, setKeyToRevoke] = useState<string | null>(null);
+    const [isRevoking, setIsRevoking] = useState(false);
 
     const handleCreateKey = async () => {
         setIsCreating(true);
@@ -42,16 +44,20 @@ const APIKeys = () => {
         }
     };
 
-    const handleRevokeKey = async (id: string) => {
-        if (!window.confirm("Are you sure you want to revoke this API key? This action cannot be undone.")) return;
+    const handleRevokeKey = async () => {
+        if (!keyToRevoke) return;
 
         try {
-            await tenantApi.revokeApiKey(id);
+            setIsRevoking(true);
+            await tenantApi.revokeApiKey(keyToRevoke);
             toast.success("API Key revoked successfully.");
             mutate(); // Refresh the list
+            setKeyToRevoke(null);
         } catch (error: any) {
             console.error("Failed to revoke API key:", error);
             toast.error(error?.response?.data?.message || "Failed to revoke API key.");
+        } finally {
+            setIsRevoking(false);
         }
     };
 
@@ -167,7 +173,7 @@ const APIKeys = () => {
                                                         Rotate
                                                     </button>
                                                     <button
-                                                        onClick={() => handleRevokeKey(key.id)}
+                                                        onClick={() => setKeyToRevoke(key.id)}
                                                         className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -218,6 +224,45 @@ const APIKeys = () => {
                             >
                                 {isCreating ? 'Registering...' : 'Register Key'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Revocation Confirmation Modal */}
+            {keyToRevoke && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-300">
+                        <div className="p-8 text-center">
+                            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Trash2 className="w-10 h-10 text-red-500" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Revoke API Key</h3>
+                            <p className="text-slate-500 font-medium mb-8">
+                                Are you sure you want to revoke this API key? Any applications using this key will immediately lose access to the API. This action cannot be undone.
+                            </p>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setKeyToRevoke(null)}
+                                    disabled={isRevoking}
+                                    className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all active:scale-95 disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleRevokeKey}
+                                    disabled={isRevoking}
+                                    className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isRevoking ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            <span>Revoking...</span>
+                                        </>
+                                    ) : (
+                                        'Revoke Key'
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

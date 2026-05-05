@@ -35,6 +35,8 @@ export default function Webhooks() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [webhookToDelete, setWebhookToDelete] = useState<string | null>(null);
 
     // Form fields
     const [url, setUrl] = useState('');
@@ -66,16 +68,20 @@ export default function Webhooks() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!window.confirm('Are you sure you want to delete this webhook?')) return;
+    const handleDelete = async () => {
+        if (!webhookToDelete) return;
 
         try {
-            await webhookApi.deleteWebhook(id);
+            setIsDeleting(true);
+            await webhookApi.deleteWebhook(webhookToDelete);
             toast.success('Webhook deleted successfully');
             mutateThis(); // Refetch webhooks
-            if (selectedWebhook?.id === id) setSelectedWebhook(null);
+            if (selectedWebhook?.id === webhookToDelete) setSelectedWebhook(null);
+            setWebhookToDelete(null);
         } catch (error) {
             toast.error('Failed to delete webhook');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -203,7 +209,7 @@ export default function Webhooks() {
                                                 </button>
                                                 {canManageCredentials(user?.role) && (
                                                     <button
-                                                        onClick={() => handleDelete(webhook.id)}
+                                                        onClick={() => setWebhookToDelete(webhook.id)}
                                                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -361,7 +367,7 @@ export default function Webhooks() {
                         {canManageCredentials(user?.role) && (
                             <div className="p-8 border-t border-slate-100 bg-slate-50/30">
                                 <button
-                                    onClick={() => handleDelete(selectedWebhook.id)}
+                                    onClick={() => setWebhookToDelete(selectedWebhook.id)}
                                     className="w-full py-4 bg-white hover:bg-red-50 text-red-600 text-sm font-bold rounded-2xl border border-red-100 transition-all flex items-center justify-center"
                                 >
                                     <Trash2 className="w-4 h-4 mr-2" />
@@ -369,6 +375,46 @@ export default function Webhooks() {
                                 </button>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Deletion Confirmation Modal */}
+            {webhookToDelete && (
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-300">
+                        <div className="p-8 text-center">
+                            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <Trash2 className="w-10 h-10 text-red-500" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Confirm Deletion</h3>
+                            <p className="text-slate-500 font-medium mb-8">
+                                Are you sure you want to delete this webhook? This action is irreversible and will stop all event notifications to this endpoint.
+                            </p>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setWebhookToDelete(null)}
+                                    disabled={isDeleting}
+                                    className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition-all active:scale-95 disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    disabled={isDeleting}
+                                    className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl shadow-lg shadow-red-100 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isDeleting ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            <span>Deleting...</span>
+                                        </>
+                                    ) : (
+                                        'Delete Webhook'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

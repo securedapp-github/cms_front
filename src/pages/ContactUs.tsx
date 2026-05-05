@@ -25,6 +25,7 @@ const ContactUs = () => {
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [submitState, setSubmitState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
     const [errorMessage, setErrorMessage] = useState('');
+    const [emailWarning, setEmailWarning] = useState('');
 
     const categories = [
         { id: 'technical_issue', label: 'Technical Issue' },
@@ -41,11 +42,16 @@ const ContactUs = () => {
         }
         if (!formData.email.trim()) {
             errors.email = 'Email is required';
-        } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+        } else if (/[A-Z]/.test(formData.email)) {
+            errors.email = 'Capital letters are not allowed in the email';
+        } else if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(formData.email)) {
             errors.email = 'Please enter a valid email address';
         }
+        
         if (!formData.phoneNumber.trim()) {
             errors.phoneNumber = 'Phone number is required';
+        } else if (!/^\d{10}$/.test(formData.phoneNumber.trim())) {
+            errors.phoneNumber = 'Phone number must be exactly 10 digits';
         }
         if (!formData.category) errors.category = 'Please select a category';
         if (!formData.message.trim()) {
@@ -80,7 +86,7 @@ const ContactUs = () => {
                 body: JSON.stringify({
                     fullName: formData.fullName,
                     mobile: formData.phoneNumber,
-                    email: formData.email,
+                    email: formData.email.toLowerCase().trim(),
                     serviceOffering: selectedCategory,
                     message: formData.message,
                     agreePrivacy: formData.agreePrivacy,
@@ -233,11 +239,18 @@ const ContactUs = () => {
                                             className={`w-full px-5 py-3.5 bg-slate-50 border ${formErrors.email ? 'border-rose-300 ring-rose-100' : 'border-slate-200'} rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-medium`}
                                             value={formData.email}
                                             onChange={(e) => {
-                                                setFormData({ ...formData, email: e.target.value });
+                                                const val = e.target.value;
+                                                setFormData({ ...formData, email: val });
+                                                if (/[A-Z]/.test(val)) {
+                                                    setEmailWarning('Capital letters are not allowed in email');
+                                                } else {
+                                                    setEmailWarning('');
+                                                }
                                                 if (formErrors.email) setFormErrors({ ...formErrors, email: '' });
                                             }}
                                             disabled={submitState === 'submitting'}
                                         />
+                                        {emailWarning && <p className="text-[10px] text-amber-600 font-bold mt-1 ml-1 flex items-center gap-1 animate-pulse"><AlertCircle className="w-3 h-3" /> {emailWarning}</p>}
                                         {formErrors.email && <p className="text-xs text-rose-500 font-semibold mt-1 ml-1">{formErrors.email}</p>}
                                     </div>
 
@@ -248,8 +261,11 @@ const ContactUs = () => {
                                             className={`w-full px-5 py-3.5 bg-slate-50 border ${formErrors.phoneNumber ? 'border-rose-300 ring-rose-100' : 'border-slate-200'} rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-medium`}
                                             value={formData.phoneNumber}
                                             onChange={(e) => {
-                                                setFormData({ ...formData, phoneNumber: e.target.value });
-                                                if (formErrors.phoneNumber) setFormErrors({ ...formErrors, phoneNumber: '' });
+                                                const val = e.target.value.replace(/\D/g, ''); // Only allow digits
+                                                if (val.length <= 10) {
+                                                    setFormData({ ...formData, phoneNumber: val });
+                                                    if (formErrors.phoneNumber) setFormErrors({ ...formErrors, phoneNumber: '' });
+                                                }
                                             }}
                                             disabled={submitState === 'submitting'}
                                         />
