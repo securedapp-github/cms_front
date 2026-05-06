@@ -138,7 +138,7 @@ const DashboardLayout = () => {
     return (
         <div className="min-h-screen bg-slate-50 flex font-sans antialiased text-slate-900">
             {/* Sidebar */}
-            <aside className="w-64 bg-white border-r border-slate-200 flex flex-col fixed inset-y-0 z-50">
+            <aside className="w-64 h-screen bg-white border-r border-slate-200 flex flex-col fixed left-0 top-0 z-50">
                 <div className="h-14 flex items-center justify-center border-b border-slate-200 bg-white">
                     <img 
                         src={logo} 
@@ -147,7 +147,7 @@ const DashboardLayout = () => {
                     />
                 </div>
 
-                <nav className="flex-1 py-8 px-4 space-y-1 overflow-y-auto custom-scrollbar">
+                <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto custom-scrollbar min-h-0 pb-12">
                     {navItems.map((item) => (
                         <NavLink
                             key={item.path}
@@ -205,7 +205,7 @@ const DashboardLayout = () => {
                     )}
                 </nav>
 
-                <div className="p-4 border-t border-slate-100 bg-white mt-auto">
+                <div className="p-4 border-t border-slate-100 bg-white mt-auto flex-shrink-0">
                     <div className="flex items-center space-x-3 mb-4 p-2">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm shadow-sm">
                             {user?.name?.charAt(0) || 'U'}
