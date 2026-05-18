@@ -34,14 +34,34 @@ const Purposes = () => {
         validity_days: '' as any
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Frontend validation: Check if purpose name is empty
+        if (!formData.name.trim()) {
+            setValidationError('Purpose name is required.');
+            toast.error('Purpose name is required');
+            return;
+        }
+        
+        // Validation: Check if at least one data element is selected
+        if (formData.required_data.length === 0) {
+            setValidationError('Please select at least one data element.');
+            toast.error('Please select at least one data element');
+            return;
+        }
+        
+        // Clear any previous validation errors
+        setValidationError(null);
+        
         try {
             setIsSubmitting(true);
             await purposeApi.createPurpose(formData);
             toast.success('Purpose created successfully');
             setIsModalOpen(false);
+            setValidationError(null);
             setFormData({ 
                 name: '', 
                 description: '', 
@@ -51,7 +71,9 @@ const Purposes = () => {
             });
             mutatePurposes();
         } catch (error: any) {
-            toast.error(error.response?.data?.error || 'Failed to create purpose');
+            const errorMessage = error.response?.data?.error || error.message || 'Failed to create purpose';
+            setValidationError(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -185,7 +207,10 @@ const Purposes = () => {
             {/* Create Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsModalOpen(false)}></div>
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => {
+                        setIsModalOpen(false);
+                        setValidationError(null);
+                    }}></div>
                     <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md flex flex-col max-h-[90vh] overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200">
                         <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                             <h3 className="text-xl font-bold text-slate-900">New Purpose</h3>
@@ -203,7 +228,13 @@ const Purposes = () => {
                                         placeholder="e.g., Marketing Analytics"
                                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                                         value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        onChange={(e) => {
+                                            setFormData({ ...formData, name: e.target.value });
+                                            // Clear validation error if name becomes non-empty
+                                            if (validationError && e.target.value.trim()) {
+                                                setValidationError(null);
+                                            }
+                                        }}
                                     />
                                 </div>
                                 <div className="space-y-1.5">
@@ -232,8 +263,21 @@ const Purposes = () => {
                                 </div>
 
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Required Data Elements</label>
-                                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 max-h-40 overflow-y-auto space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Required Data Elements</label>
+                                        <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                                            formData.required_data.length === 0 
+                                                ? 'bg-red-50 text-red-600' 
+                                                : 'bg-indigo-50 text-indigo-600'
+                                        }`}>
+                                            {formData.required_data.length} selected
+                                        </span>
+                                    </div>
+                                    <div className={`p-4 rounded-2xl border-2 transition-all ${
+                                        formData.required_data.length === 0
+                                            ? 'border-red-200 bg-red-50/50'
+                                            : 'border-slate-200 bg-slate-50'
+                                    } max-h-40 overflow-y-auto space-y-2`}>
                                         {catalog.length === 0 ? (
                                             <p className="text-xs text-slate-400">No data elements available in catalog.</p>
                                         ) : (
@@ -242,22 +286,36 @@ const Purposes = () => {
                                                     <input
                                                         type="checkbox"
                                                         id={`data-${entry.data_id}`}
-                                                        className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                                                        className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer"
                                                         checked={formData.required_data.includes(entry.data_id)}
                                                         onChange={(e) => {
                                                             const newData = e.target.checked
                                                                 ? [...formData.required_data, entry.data_id]
                                                                 : formData.required_data.filter(id => id !== entry.data_id);
                                                             setFormData({ ...formData, required_data: newData });
+                                                            // Clear validation error when user selects data elements
+                                                            if (validationError && newData.length > 0) {
+                                                                setValidationError(null);
+                                                            }
                                                         }}
                                                     />
-                                                    <label htmlFor={`data-${entry.data_id}`} className="text-xs font-bold text-slate-700 cursor-pointer uppercase">
+                                                    <label htmlFor={`data-${entry.data_id}`} className="text-xs font-bold text-slate-700 cursor-pointer uppercase hover:text-indigo-600 transition-colors">
                                                         {entry.data_id}
                                                     </label>
                                                 </div>
                                             ))
                                         )}
                                     </div>
+                                    {formData.required_data.length === 0 && (
+                                        <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg mt-2">
+                                            <div className="text-red-600 mt-0.5">
+                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zm-11-1a1 1 0 11-2 0 1 1 0 012 0zM8 8a1 1 0 000 2h4a1 1 0 100-2H8zm4-3a1 1 0 11-2 0 1 1 0 012 0z" clipRule="evenodd" />
+                                                </svg>
+                                            </div>
+                                            <p className="text-xs font-bold text-red-700">Please select at least one data element to proceed.</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
@@ -274,11 +332,19 @@ const Purposes = () => {
                                 </div>
                             </div>
                             <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end space-x-3 sticky bottom-0 z-10">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Cancel</button>
+                                <button type="button" onClick={() => {
+                                    setIsModalOpen(false);
+                                    setValidationError(null);
+                                }} className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Cancel</button>
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting}
-                                    className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50 inline-flex items-center"
+                                    disabled={isSubmitting || !formData.name.trim() || formData.required_data.length === 0}
+                                    title={
+                                        !formData.name.trim() ? 'Purpose name is required' :
+                                        formData.required_data.length === 0 ? 'Please select at least one data element' :
+                                        ''
+                                    }
+                                    className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 inline-flex items-center"
                                 >
                                     {isSubmitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                                     Create Purpose
