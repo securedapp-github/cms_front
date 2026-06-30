@@ -22,8 +22,8 @@ export interface DSRStatusResponse {
 }
 
 export const dsrApi = {
-    getDsrRequests: async (appId: string) => {
-        const response = await apiClient.get<{ requests: DSRRequest[] }>(`/tenant/apps/${appId}/dsr`);
+    getDsrRequests: async (appId: string, params?: { status?: string; search?: string; start_date?: string; end_date?: string }) => {
+        const response = await apiClient.get<{ requests: DSRRequest[] }>(`/tenant/apps/${appId}/dsr`, { params });
         return response.data.requests || [];
     },
     createDsrRequest: async (appId: string, data: { user_id: string, type: string }) => {

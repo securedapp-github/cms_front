@@ -52,11 +52,21 @@ const REQUEST_TYPES = [
 export default function DSRRequests() {
     const { user } = useAuthStore();
     const { selectedAppId } = useAppStore();
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     
     // Fetch DSR Requests with 10s polling
     const { data: requests = [], isLoading: loading, error: swrError, mutate } = useSWR(
-        selectedAppId ? ['dsr', selectedAppId] : null,
-        ([_, appId]) => dsrApi.getDsrRequests(appId),
+        selectedAppId ? ['dsr', selectedAppId, searchTerm, statusFilter, startDate, endDate] : null,
+        ([_, appId]) => dsrApi.getDsrRequests(appId, {
+            search: searchTerm || undefined,
+            status: statusFilter === 'all' ? undefined : statusFilter,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined
+        }),
         { refreshInterval: 10000 }
     );
     
@@ -256,24 +266,52 @@ export default function DSRRequests() {
             </div>
 
             {/* Search and Filters */}
-            <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
-                <div className="flex-1 relative">
+            <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+                <div className="flex-1 w-full relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                         type="text"
                         placeholder="Search by Request ID or User ID..."
                         className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all placeholder:text-slate-400"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <div className="flex gap-2">
-                    <button className="px-4 py-2.5 bg-slate-50 border border-slate-200 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-100 transition-all inline-flex items-center">
-                        <Filter className="w-4 h-4 mr-2" />
-                        Status
-                    </button>
-                    <button className="px-4 py-2.5 bg-slate-50 border border-slate-200 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-100 transition-all inline-flex items-center">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        Date Range
-                    </button>
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                    {/* Status Dropdown */}
+                    <div className="relative flex items-center bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2.5">
+                        <Filter className="w-4 h-4 mr-2 text-slate-400" />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="bg-transparent text-sm font-bold text-slate-600 outline-none cursor-pointer appearance-none pr-4"
+                        >
+                            <option value="all">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="completed">Completed</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="escalated">Escalated</option>
+                        </select>
+                    </div>
+
+                    {/* Date Filters */}
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2">
+                        <Calendar className="w-4 h-4 mr-2 text-slate-400" />
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="bg-transparent text-sm font-bold text-slate-600 outline-none cursor-pointer"
+                        />
+                        <span className="text-xs text-slate-400 font-bold">to</span>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="bg-transparent text-sm font-bold text-slate-600 outline-none cursor-pointer"
+                        />
+                    </div>
                 </div>
             </div>
 

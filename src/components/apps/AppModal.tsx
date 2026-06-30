@@ -56,20 +56,25 @@ export const AppModal: React.FC<AppModalProps> = ({ isOpen, onClose, onSubmit, i
                             <input
                                 type="text"
                                 value={name}
-                                onChange={(e) => setName(e.target.value)}
+                                maxLength={30}
+                                placeholder="e.g. production_mobile_app"
+                                onChange={(e) => setName(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 required
                             />
+                            <p className="mt-1 text-[10px] text-slate-400">Max 30 characters, alphanumeric and underscores only.</p>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Slug</label>
                             <input
                                 type="text"
                                 value={slug}
-                                onChange={(e) => setSlug(e.target.value)}
+                                placeholder="e.g. production-mobile-app"
+                                onChange={(e) => setSlug(e.target.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                                 required
                             />
+                            <p className="mt-1 text-[10px] text-slate-400">Lowercase alphanumeric and hyphens only.</p>
                         </div>
 
                         <div>

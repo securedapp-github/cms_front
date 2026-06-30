@@ -63,6 +63,7 @@ const Consents = () => {
     const [newConsentPurposeIds, setNewConsentPurposeIds] = useState<string[]>([]);
     const [newConsentPolicyId, setNewConsentPolicyId] = useState('');
     const [identityHash, setIdentityHash] = useState('');
+    const [middleName, setMiddleName] = useState('');
 
     // OTP Flow state
     const [isOtpStep, setIsOtpStep] = useState(false);
@@ -92,6 +93,7 @@ const Consents = () => {
     const isRedirectFlow = selectedApp?.consent_flow === 'redirect';
 
     const isEmail = (val: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+    const isPhone = (val: string) => /^\+?\d{6,15}$/.test(val.trim());
     
     const { data: consents = [], isLoading } = useQuery({
         queryKey: ['admin-consents', selectedAppId, searchTerm],
@@ -99,6 +101,8 @@ const Consents = () => {
             const params: any = {};
             if (isEmail(searchTerm)) {
                 params.email = searchTerm;
+            } else if (isPhone(searchTerm)) {
+                params.phone_number = searchTerm;
             } else if (searchTerm.length > 30) { // Likely a hash
                 params.identity_hash = searchTerm;
             }
@@ -124,7 +128,9 @@ const Consents = () => {
         }
 
         try {
-            const msgBuffer = new TextEncoder().encode(`${email.trim().toLowerCase()}${phone.trim()}`);
+            const cleanEmail = (email || '').trim().toLowerCase();
+            const cleanPhone = (phone || '').trim();
+            const msgBuffer = new TextEncoder().encode(`${cleanEmail}${cleanPhone}`);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
             const hashArray = Array.from(new Uint8Array(hashBuffer));
             const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -145,6 +151,10 @@ const Consents = () => {
 
     const handleRecordConsent = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (middleName) {
+            toast.error('Bot activity detected');
+            return;
+        }
         if (!newConsentEmail && !newConsentPhone) {
             toast.error('Please provide at least Email or Phone Number');
             return;
@@ -160,7 +170,8 @@ const Consents = () => {
                 email: newConsentEmail,
                 phone_number: newConsentPhone || undefined,
                 purpose_ids: newConsentPurposeIds,
-                policyVersionId: newConsentPolicyId
+                policyVersionId: newConsentPolicyId,
+                middle_name: middleName || undefined
             });
             
             if (response.success) {
@@ -210,14 +221,21 @@ const Consents = () => {
         setManualSessionId('');
         setOtpCode('');
         setDevOtp('');
+        setMiddleName('');
     };
 
     const filteredConsents = consents.filter((c: ConsentRecord) => {
         // Since we now have server-side search for email/hash, 
         // we only need local filtering for status and purpose name.
         const matchesStatus = statusFilter === 'All Statuses' || (c.status || '').toLowerCase() === statusFilter.toLowerCase();
+        
+        // If search term is email, phone, or hash, the backend already did the filtering, so we don't need matchesPurpose
+        if (isEmail(searchTerm) || isPhone(searchTerm) || searchTerm.length > 30) {
+            return matchesStatus;
+        }
+
         const matchesPurpose = c.purposeName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                               c.userId.toLowerCase().includes(searchTerm.toLowerCase());
+                               (c.userId && c.userId.toLowerCase().includes(searchTerm.toLowerCase()));
         return matchesStatus && matchesPurpose;
     });
 
@@ -294,7 +312,7 @@ const Consents = () => {
                     >
                         <option>All Statuses</option>
                         <option>Active</option>
-                        <option>Expired</option>
+                        <option>Revoked</option>
                     </select>
                     <button
                         onClick={resetFilters}
@@ -613,9 +631,9 @@ const Consents = () => {
                         onClick={() => !isCreating && (setShowCreateModal(false), resetCreateForm())}
                     />
                     
-                    <div className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden relative animate-in zoom-in-95 duration-300">
+                    <div className="bg-white rounded-[2.5rem] w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden relative animate-in zoom-in-95 duration-300 max-h-[90vh] flex flex-col">
                         {/* Modal Header */}
-                        <div className="px-8 pt-8 pb-6 flex items-center justify-between relative overflow-hidden">
+                        <div className="px-8 pt-8 pb-6 flex items-center justify-between relative overflow-hidden shrink-0">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
                             <div className="relative">
                                 <h3 className="text-2xl font-black text-slate-900 leading-tight">Record Consent</h3>
@@ -633,11 +651,21 @@ const Consents = () => {
                             </button>
                         </div>
 
-                        <form onSubmit={isOtpStep ? handleVerifyManualOtp : handleRecordConsent} className="px-8 pb-8 space-y-6 relative">
+                        <form onSubmit={isOtpStep ? handleVerifyManualOtp : handleRecordConsent} className="px-8 pb-8 pt-2 space-y-6 relative flex-1 overflow-y-auto">
+                            {/* Honeypot field (OWASP bot prevention) */}
+                            <input
+                                type="text"
+                                name="middle_name"
+                                value={middleName}
+                                onChange={(e) => setMiddleName(e.target.value)}
+                                style={{ display: 'none' }}
+                                tabIndex={-1}
+                                autoComplete="off"
+                            />
                             {!isOtpStep ? (
                                 <>
                                     {/* Identity Fields */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 gap-4">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
                                             <div className="relative group">
@@ -678,7 +706,7 @@ const Consents = () => {
                                                 <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 shrink-0">
                                                     <ShieldCheck className="w-4 h-4" />
                                                 </div>
-                                                <code className="text-[10px] font-bold text-indigo-300 break-all">
+                                                <code className="flex-1 text-[10px] font-bold text-indigo-300 break-all font-mono">
                                                     {identityHash}
                                                 </code>
                                             </div>

@@ -66,6 +66,7 @@ const Login = () => {
         }
     };
 
+
     return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative overflow-hidden">
             {/* Mesh Gradient Background */}
@@ -143,6 +144,7 @@ const Login = () => {
                                     </div>
                                 )}
                             </div>
+
 
                             <div className="relative pt-2">
                                 <div className="absolute inset-0 flex items-center" aria-hidden="true">

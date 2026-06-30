@@ -1,4 +1,5 @@
 import useSWR from 'swr';
+import { useNavigate } from 'react-router-dom';
 import {
     Users,
     ShieldCheck,
@@ -12,6 +13,7 @@ import { auditApi } from '../api/auditApi';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {
+    const navigate = useNavigate();
     const { data: stats, isLoading: loadingStats } = useSWR<DashboardStats>('dashboard-stats', () => dashboardApi.getDashboardStats());
     const { data: auditData, isLoading: loadingAudit } = useSWR('recent-activity', () => auditApi.getAuditLogs({ limit: 5 }));
     
@@ -125,7 +127,7 @@ const Dashboard = () => {
                         <h3 className="font-bold text-slate-900">Recent Activity</h3>
                     </div>
                     <button 
-                        onClick={() => window.location.href = '/audit-logs'}
+                        onClick={() => navigate('/audit-logs')}
                         className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition-colors"
                     >
                         View all

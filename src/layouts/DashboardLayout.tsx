@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import {
@@ -29,6 +29,7 @@ import useSWR from 'swr';
 import { appsApi } from '../api/appsApi';
 import { tenantApi } from '../api/tenantApi';
 import { authApi } from '../api/authApi';
+import { auditApi } from '../api/auditApi';
 import { useAppStore } from '../store/appStore';
 import { 
     ROLES, 
@@ -46,6 +47,29 @@ const DashboardLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const fetchInProgress = useRef(false);
+
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const notificationsRef = useRef<HTMLDivElement>(null);
+
+    const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
+
+    const { data: notificationsData } = useSWR(
+        !isSuperAdmin && isNotificationsOpen ? 'recent-notifications' : null,
+        () => auditApi.getAuditLogs({ limit: 5 })
+    );
+    const notifications = notificationsData?.logs || [];
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+                setIsNotificationsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     // Fetch user role if missing (Optimized with Ref guard)
     useEffect(() => {
@@ -66,8 +90,6 @@ const DashboardLayout = () => {
             });
         }
     }, [user, updateUserRole, logout, navigate]);
-
-    const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
 
     // Fetch apps (Skip for Super Admin)
     const { data: appsData } = useSWR(!isSuperAdmin ? 'tenant/apps' : null, () => appsApi.listApps());
@@ -100,7 +122,7 @@ const DashboardLayout = () => {
 
     const handleLogout = () => {
         logout();
-        navigate('/');
+        window.location.replace('/');
     };
 
     // Redirect Super Admin if on tenant-specific route
@@ -273,10 +295,64 @@ const DashboardLayout = () => {
                                 </div>
                             </>
                         )}
-                        <button className="relative p-2 text-slate-400 hover:bg-slate-50 hover:text-indigo-600 rounded-full transition-all duration-200 group">
-                            <Bell className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-2 ring-transparent group-hover:ring-red-100 transition-all"></span>
-                        </button>
+                        {/* Notification Dropdown Container */}
+                        <div className="relative" ref={notificationsRef}>
+                            <button 
+                                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                                title="View System Notifications"
+                                className="relative p-2 text-slate-400 hover:bg-slate-50 hover:text-indigo-600 rounded-full transition-all duration-200 group"
+                            >
+                                <Bell className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-2 ring-transparent group-hover:ring-red-100 transition-all"></span>
+                            </button>
+
+                            {isNotificationsOpen && (
+                                <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                                        <span className="text-xs font-black uppercase tracking-wider text-slate-500">System Notifications</span>
+                                        <span className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
+                                    </div>
+                                    <div className="max-h-64 overflow-y-auto divide-y divide-slate-50">
+                                        {notifications.length === 0 ? (
+                                            <div className="p-4 text-center text-xs text-slate-400 font-bold">
+                                                No new notifications.
+                                            </div>
+                                        ) : (
+                                            notifications.map((n: any, idx: number) => (
+                                                <div key={n.id || idx} className="p-4 hover:bg-slate-50/80 transition-colors">
+                                                    <div className="flex items-start space-x-2">
+                                                        <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
+                                                            n.action.includes('DELETE') || n.action.includes('REVOKE') || n.action.includes('FAIL') ? 'bg-red-500' :
+                                                            n.action.includes('CREATE') || n.action.includes('GRANT') || n.action.includes('SUCCESS') ? 'bg-emerald-500' :
+                                                            n.action.includes('UPDATE') ? 'bg-amber-500' : 'bg-indigo-500'
+                                                        }`} />
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-xs font-bold text-slate-800 truncate uppercase">
+                                                                {n.action.replace(/_/g, ' ')}
+                                                            </p>
+                                                            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                                                {n.resource_type} • {new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                    <div className="p-2.5 border-t border-slate-100 bg-slate-50/50 text-center rounded-b-2xl">
+                                        <button 
+                                            onClick={() => {
+                                                setIsNotificationsOpen(false);
+                                                navigate('/audit-logs');
+                                            }}
+                                            className="text-xs font-black text-indigo-600 hover:text-indigo-700 transition-colors"
+                                        >
+                                            View All Audit Logs
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </header>
 

@@ -149,8 +149,14 @@ const Tenant = () => {
                                             onChange={(e) => setEditForm({...editForm, industry: e.target.value})}
                                         />
                                     </div>
-                                    <div className="space-y-1.5 md:col-span-1">
-                                        {/* Spacer to maintain grid layout or just removed */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Country</label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                            value={editForm.country}
+                                            onChange={(e) => setEditForm({...editForm, country: e.target.value})}
+                                        />
                                     </div>
                                 </div>
                             ) : (
@@ -274,15 +280,26 @@ const Tenant = () => {
                                             />
                                         </div>
                                     </div>
-                                    <div className="space-y-1.5 w-1/2">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Postal Code</label>
-                                        <input
-                                            type="text"
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                                            value={editForm.address.postal_code}
-                                            onChange={(e) => setEditForm({...editForm, address: {...editForm.address, postal_code: e.target.value}})}
-                                        />
-                                    </div>
+                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                         <div className="space-y-1.5">
+                                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Postal Code</label>
+                                             <input
+                                                 type="text"
+                                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                                 value={editForm.address.postal_code}
+                                                 onChange={(e) => setEditForm({...editForm, address: {...editForm.address, postal_code: e.target.value}})}
+                                             />
+                                         </div>
+                                         <div className="space-y-1.5">
+                                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Country</label>
+                                             <input
+                                                 type="text"
+                                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                                 value={editForm.address.country}
+                                                 onChange={(e) => setEditForm({...editForm, address: {...editForm.address, country: e.target.value}})}
+                                             />
+                                         </div>
+                                     </div>
                                 </div>
                             ) : (
                                 <div className="space-y-1">
