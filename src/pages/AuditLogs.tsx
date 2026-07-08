@@ -39,13 +39,20 @@ const AuditLogs = () => {
     const { user } = useAuthStore();
     const [page, setPage] = useState(1);
     const [actionFilter, setActionFilter] = useState('');
+    const [emailFilter, setEmailFilter] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [showMoreFilters, setShowMoreFilters] = useState(false);
 
     const { data: response, isLoading: loading } = useSWR(
-        ['audit-logs', page, actionFilter],
-        () => auditApi.getAuditLogs({
-            page,
+        ['audit-logs', page, actionFilter, emailFilter, startDate, endDate],
+        ([_, p, a, e, sd, ed]) => auditApi.getAuditLogs({
+            page: p,
             limit: 10,
-            action: actionFilter || undefined
+            action: a || undefined,
+            email: e || undefined,
+            from_date: sd || undefined,
+            to_date: ed || undefined
         })
     );
 
@@ -77,26 +84,79 @@ const AuditLogs = () => {
             </div>
 
             {/* Filters */}
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder="Filter by action (e.g., PURPOSE_CREATE)..."
-                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium"
-                        value={actionFilter}
-                        onChange={(e) => {
-                            setActionFilter(e.target.value);
-                            setPage(1);
-                        }}
-                    />
+            <div className="space-y-4">
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Filter by action (e.g., PURPOSE_CREATED)..."
+                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-semibold placeholder:text-slate-400"
+                            value={actionFilter}
+                            onChange={(e) => {
+                                setActionFilter(e.target.value);
+                                setPage(1);
+                            }}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            type="button"
+                            onClick={() => setShowMoreFilters(!showMoreFilters)}
+                            className={`inline-flex items-center px-4 py-2.5 border rounded-xl text-sm font-bold transition-all ${
+                                showMoreFilters 
+                                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm shadow-indigo-50'
+                                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}
+                        >
+                            <Filter className="w-4 h-4 mr-2" />
+                            More Filters
+                        </button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    <button className="inline-flex items-center px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-                        <Filter className="w-4 h-4 mr-2" />
-                        More Filters
-                    </button>
-                </div>
+
+                {/* Collapsible Filter Panel */}
+                {showMoreFilters && (
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-top-2 duration-300">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">User Email</label>
+                            <input
+                                type="text"
+                                placeholder="e.g. user@example.com"
+                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                value={emailFilter}
+                                onChange={(e) => {
+                                    setEmailFilter(e.target.value);
+                                    setPage(1);
+                                }}
+                            />
+                        </div>
+                        <div className="space-y-1.5 md:col-span-2">
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Date Range</label>
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="date"
+                                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                    value={startDate}
+                                    onChange={(e) => {
+                                        setStartDate(e.target.value);
+                                        setPage(1);
+                                    }}
+                                />
+                                <span className="text-xs text-slate-400 font-bold">to</span>
+                                <input
+                                    type="date"
+                                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                    value={endDate}
+                                    onChange={(e) => {
+                                        setEndDate(e.target.value);
+                                        setPage(1);
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Logs Table */}

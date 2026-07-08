@@ -225,22 +225,29 @@ const Purposes = () => {
                                     <input
                                         type="text"
                                         required
-                                        placeholder="e.g., Marketing Analytics"
+                                        maxLength={30}
+                                        placeholder="e.g., marketing_analytics"
                                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                                         value={formData.name}
                                         onChange={(e) => {
-                                            setFormData({ ...formData, name: e.target.value });
+                                            const val = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
+                                            setFormData({ ...formData, name: val });
                                             // Clear validation error if name becomes non-empty
-                                            if (validationError && e.target.value.trim()) {
+                                            if (validationError && val.trim()) {
                                                 setValidationError(null);
                                             }
                                         }}
                                     />
+                                    <p className="mt-1 text-[10px] text-slate-400">Max 30 characters, alphanumeric and underscores only.</p>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Description</label>
+                                    <div className="flex justify-between items-center">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Description</label>
+                                        <span className="text-[10px] text-slate-400 font-bold">{(formData.description || '').length}/100</span>
+                                    </div>
                                     <textarea
                                         required
+                                        maxLength={100}
                                         placeholder="Briefly describe why this data is collected."
                                         rows={3}
                                         className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all resize-none"

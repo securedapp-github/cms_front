@@ -5,6 +5,7 @@ export interface GrantConsentRequest {
     phone_number?: string;
     purpose_ids: string[];
     policyVersionId: string;
+    middle_name?: string;
 }
 
 export interface Consent {

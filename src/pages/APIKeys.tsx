@@ -38,7 +38,12 @@ const APIKeys = () => {
             setNewKeyData({ name: '' });
             mutate(); // Refresh the list
         } catch (error: any) {
-            toast.error(error?.response?.data?.message || "Failed to create API key.");
+            const serverError = error?.response?.data?.error || error?.response?.data?.message || "";
+            if (serverError.toLowerCase().includes('already exists') || serverError.toLowerCase().includes('duplicate')) {
+                toast.error("already same name key exists");
+            } else {
+                toast.error(serverError || "Failed to create API key.");
+            }
         } finally {
             setIsCreating(false);
         }
@@ -204,11 +209,13 @@ const APIKeys = () => {
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Key Name</label>
                                 <input
                                     type="text"
-                                    placeholder="e.g. Production Mobile App"
+                                    maxLength={30}
+                                    placeholder="e.g. production_mobile_app"
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                                     value={newKeyData.name}
-                                    onChange={(e) => setNewKeyData(prev => ({ ...prev, name: e.target.value }))}
+                                    onChange={(e) => setNewKeyData(prev => ({ ...prev, name: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') }))}
                                 />
+                                <p className="mt-1 text-[10px] text-slate-400">Max 30 characters, alphanumeric and underscores only.</p>
                             </div>
                             <div className="bg-indigo-50/50 rounded-xl p-3 flex items-start space-x-2">
                                 <AlertCircle className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />

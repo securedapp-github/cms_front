@@ -27,10 +27,23 @@ import RBACTest from './pages/Admin/RBACTest';
 import ContactUs from './pages/ContactUs';
 import { Toaster } from 'react-hot-toast';
 
+import { useEffect } from 'react';
 import RedirectConsent from './pages/consent/RedirectConsent';
 import ConsentResult from './pages/consent/ConsentResult';
 
 function App() {
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, []);
+
   return (
     <>
       <Toaster position="top-right" />
