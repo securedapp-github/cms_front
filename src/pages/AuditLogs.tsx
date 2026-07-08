@@ -39,18 +39,16 @@ const AuditLogs = () => {
     const { user } = useAuthStore();
     const [page, setPage] = useState(1);
     const [actionFilter, setActionFilter] = useState('');
-    const [emailFilter, setEmailFilter] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [showMoreFilters, setShowMoreFilters] = useState(false);
 
     const { data: response, isLoading: loading } = useSWR(
-        ['audit-logs', page, actionFilter, emailFilter, startDate, endDate],
-        ([_, p, a, e, sd, ed]) => auditApi.getAuditLogs({
+        ['audit-logs', page, actionFilter, startDate, endDate],
+        ([_, p, a, sd, ed]) => auditApi.getAuditLogs({
             page: p,
             limit: 10,
             action: a || undefined,
-            email: e || undefined,
             from_date: sd || undefined,
             to_date: ed || undefined
         })
@@ -117,21 +115,8 @@ const AuditLogs = () => {
 
                 {/* Collapsible Filter Panel */}
                 {showMoreFilters && (
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6 animate-in slide-in-from-top-2 duration-300">
+                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm animate-in slide-in-from-top-2 duration-300">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">User Email</label>
-                            <input
-                                type="text"
-                                placeholder="e.g. user@example.com"
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                                value={emailFilter}
-                                onChange={(e) => {
-                                    setEmailFilter(e.target.value);
-                                    setPage(1);
-                                }}
-                            />
-                        </div>
-                        <div className="space-y-1.5 md:col-span-2">
                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Date Range</label>
                             <div className="flex items-center gap-3">
                                 <input

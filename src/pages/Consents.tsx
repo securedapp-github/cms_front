@@ -831,7 +831,6 @@ const Consents = () => {
                                         <h4 className="text-lg font-bold text-slate-900">Verify Identity</h4>
                                         <p className="text-sm text-slate-500 font-medium">
                                             An OTP has been sent to your <b>{otpSentTo}</b>.
-                                            {devOtp && <span className="block text-indigo-500 font-bold mt-1">Dev Mode OTP: {devOtp}</span>}
                                         </p>
                                     </div>
 
