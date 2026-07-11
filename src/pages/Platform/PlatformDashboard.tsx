@@ -186,121 +186,108 @@ const PlatformDashboard = () => {
                 </div>
             </div>
 
-            {/* Organization Table */}
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50 border-b border-slate-100">
-                                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Organization</th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">App Flow Split</th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Consents</th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Users</th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Services</th>
-                                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">Org Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {isLoading ? (
-                                <tr>
-                                    <td colSpan={6} className="px-8 py-12 text-center text-slate-400">
-                                        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-indigo-500" />
-                                        <p className="font-bold text-sm">Aggregating platform metrics...</p>
-                                    </td>
-                                </tr>
-                            ) : organizations.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="px-8 py-12 text-center text-slate-400">
-                                        <p className="font-bold text-sm">No organizations found matching criteria.</p>
-                                    </td>
-                                </tr>
-                            ) : (
-                                organizations.map((org: any) => (
-                                    <tr key={org.id} className="hover:bg-slate-50/80 transition-colors group">
-                                        <td className="px-8 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-700 font-black text-xs border border-indigo-100">
-                                                    {org.organization_name?.charAt(0) || 'O'}
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">{org.organization_name}</p>
-                                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border ${
-                                                        org.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'
-                                                    }`}>
-                                                        {org.status}
-                                                    </span>
-                                                </div>
+            {/* Organization Card Grid */}
+            <div className="space-y-4">
+                {isLoading ? (
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-12 flex flex-col items-center justify-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mb-3" />
+                        <p className="font-bold text-sm text-slate-400">Aggregating platform metrics…</p>
+                    </div>
+                ) : organizations.length === 0 ? (
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-12 flex flex-col items-center justify-center">
+                        <Building2 className="w-10 h-10 text-slate-200 mb-3" />
+                        <p className="font-bold text-sm text-slate-400">No organizations found matching criteria.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {organizations.map((org: any) => {
+                            const totalConsents = org.metrics?.total_consents || 0
+                            const activeConsents = org.metrics?.active_consents || 0
+                            const integrity = totalConsents > 0 ? Math.round((activeConsents / totalConsents) * 100) : 0
+                            return (
+                                <div key={org.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all duration-200 p-6 flex flex-col gap-4">
+                                    {/* Org Header */}
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-11 h-11 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-700 font-black text-sm border border-indigo-100 flex-shrink-0">
+                                            {org.organization_name?.charAt(0) || 'O'}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-black text-slate-900 uppercase tracking-tight text-sm truncate">
+                                                {org.organization_name}
+                                            </p>
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${
+                                                org.status === 'active'
+                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                    : 'bg-red-50 text-red-700 border-red-100'
+                                            }`}>
+                                                {org.status}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Consent Bar */}
+                                    <div className="space-y-1.5">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Consent Integrity</span>
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-widest ${
+                                                integrity > 80 ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                                            }`}>{integrity}%</span>
+                                        </div>
+                                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-700 ${integrity > 80 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                                style={{ width: `${integrity}%` }}
+                                            />
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                {activeConsents.toLocaleString()} active
+                                            </span>
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                {totalConsents.toLocaleString()} total
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Stats Row */}
+                                    <div className="grid grid-cols-4 gap-2 pt-1 border-t border-slate-100">
+                                        {[
+                                            { label: 'Users', value: org.metrics?.total_users || 0 },
+                                            { label: 'Clients', value: org.metrics?.total_clients || 0 },
+                                            { label: 'Apps', value: org.metrics?.total_apps || 0 },
+                                            { label: 'Hooks', value: org.metrics?.total_webhooks || 0 },
+                                        ].map((stat) => (
+                                            <div key={stat.label} className="flex flex-col items-center pt-2">
+                                                <span className="text-sm font-black text-slate-800">{stat.value.toLocaleString()}</span>
+                                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{stat.label}</span>
                                             </div>
-                                        </td>
-                                        <td className="px-8 py-4">
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex items-center gap-1.5" title="Embedded Apps">
-                                                    <Monitor className="w-3.5 h-3.5 text-indigo-500" />
-                                                    <span className="text-xs font-black text-slate-700">{org.consent_flow_split?.embedded_apps || 0}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5" title="Redirect Apps">
-                                                    <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
-                                                    <span className="text-xs font-black text-slate-700">{org.consent_flow_split?.redirect_apps || 0}</span>
-                                                </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Flow Split & Action */}
+                                    <div className="flex items-center justify-between pt-1">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-1" title="Embedded Apps">
+                                                <Monitor className="w-3 h-3 text-indigo-400" />
+                                                <span className="text-[10px] font-black text-slate-600">{org.consent_flow_split?.embedded_apps || 0}</span>
                                             </div>
-                                        </td>
-                                        <td className="px-8 py-4">
-                                            <div className="flex flex-col gap-2 min-w-[120px]">
-                                                <div className="flex justify-between items-end">
-                                                    <span className="text-sm font-black text-slate-900">{org.metrics?.total_consents?.toLocaleString()}</span>
-                                                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-widest ${
-                                                        (org.metrics?.active_consents / org.metrics?.total_consents) > 0.8 ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                                                    }`}>
-                                                        {Math.round((org.metrics?.active_consents / org.metrics?.total_consents) * 100 || 0)}% Integrity
-                                                    </span>
-                                                </div>
-                                                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className={`h-full transition-all duration-1000 ${
-                                                            (org.metrics?.active_consents / org.metrics?.total_consents) > 0.8 ? 'bg-emerald-500' : 'bg-amber-500'
-                                                        }`}
-                                                        style={{ width: `${(org.metrics?.active_consents / org.metrics?.total_consents) * 100 || 0}%` }}
-                                                    />
-                                                </div>
-                                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
-                                                    {org.metrics?.active_consents?.toLocaleString()} Active Grants
-                                                </span>
+                                            <div className="flex items-center gap-1" title="Redirect Apps">
+                                                <ExternalLink className="w-3 h-3 text-indigo-300" />
+                                                <span className="text-[10px] font-black text-slate-600">{org.consent_flow_split?.redirect_apps || 0}</span>
                                             </div>
-                                        </td>
-                                        <td className="px-8 py-4 text-center">
-                                            <span className="text-sm font-black text-slate-900">{org.metrics?.total_users?.toLocaleString()}</span>
-                                        </td>
-                                        <td className="px-8 py-4 text-center">
-                                            <div className="flex justify-center gap-3">
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-xs font-black text-rose-500">{org.metrics?.total_clients || 0}</span>
-                                                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Clients</span>
-                                                </div>
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-xs font-black text-indigo-600">{org.metrics?.total_apps || 0}</span>
-                                                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Apps</span>
-                                                </div>
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-xs font-black text-slate-600">{org.metrics?.total_webhooks || 0}</span>
-                                                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Hooks</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-4 text-right">
-                                            <button 
-                                                className="inline-flex items-center gap-1.5 text-xs font-black text-indigo-600 hover:text-indigo-700 transition-colors"
-                                                onClick={() => navigate(`/platform/orgs/${org.id}`)}
-                                            >
-                                                Details
-                                                <ArrowUpRight className="w-3.5 h-3.5" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                                        </div>
+                                        <button
+                                            className="inline-flex items-center gap-1 text-[11px] font-black text-indigo-600 hover:text-indigo-700 transition-colors bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg"
+                                            onClick={() => navigate(`/platform/orgs/${org.id}`)}
+                                        >
+                                            Details <ArrowUpRight className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
             </div>
 
             {/* Add Super Admin Modal */}
