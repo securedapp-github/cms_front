@@ -23,7 +23,8 @@ import {
     CreditCard,
     Star,
     AlertCircle,
-    HeadphonesIcon
+    HeadphonesIcon,
+    Fingerprint
 } from 'lucide-react';
 import useSWR from 'swr';
 import { appsApi } from '../api/appsApi';
@@ -142,6 +143,7 @@ const DashboardLayout = () => {
         { label: 'Clients', path: '/clients', icon: Users, visible: !isSuperAdmin },
         { label: 'Data Catalog', path: '/data-catalog', icon: Database, visible: !isSuperAdmin },
         { label: 'Webhooks', path: '/webhooks', icon: Webhook, visible: canViewSensitiveConfig(user?.role) && !isSuperAdmin },
+        { label: 'mTLS', path: '/mtls', icon: Fingerprint, visible: canViewSensitiveConfig(user?.role) && !isSuperAdmin },
         { label: 'DSR Requests', path: '/dsr-requests', icon: MessageSquare, visible: !isSuperAdmin },
         { label: 'Audit Logs', path: '/audit-logs', icon: History, visible: canViewAudit(user?.role) && !isSuperAdmin },
         { label: 'API Keys', path: '/api-keys', icon: Key, visible: canViewSensitiveConfig(user?.role) && !isSuperAdmin },

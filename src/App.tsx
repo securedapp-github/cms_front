@@ -14,6 +14,7 @@ import PolicyVersions from './pages/PolicyVersions';
 import AuditLogs from './pages/AuditLogs';
 import APIKeys from './pages/APIKeys';
 import Webhooks from './pages/Webhooks';
+import MTLS from './pages/MTLS';
 import DSRRequests from './pages/DSRRequests';
 import Apps from './pages/apps';
 import DataCatalog from './pages/DataCatalog';
@@ -84,6 +85,7 @@ function App() {
                 <Route path="/data-catalog" element={<DataCatalog />} />
                 <Route path="/api-keys" element={<APIKeys />} />
                 <Route path="/webhooks" element={<Webhooks />} />
+                <Route path="/mtls" element={<MTLS />} />
                 <Route path="/apps" element={<Apps />} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/contact" element={<ContactUs />} />
