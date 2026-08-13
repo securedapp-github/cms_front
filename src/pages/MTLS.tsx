@@ -34,30 +34,46 @@ function extractCnFromCsr(csrPem: string): string {
         // Parse DER ASN.1
         const csrAsn1 = forge.asn1.fromDer(der);
 
-        // PKCS#10 structure:
+        // Helper to safely determine whether an ASN.1 value is an array
+        const isAsn1Array = (
+            value: string | forge.asn1.Asn1 | forge.asn1.Asn1[]
+        ): value is forge.asn1.Asn1[] => {
+            return Array.isArray(value);
+        };
+
+        // PKCS#10:
         // CertificationRequest
         //   CertificationRequestInfo
         //     version
         //     subject
         //     subjectPKInfo
         //     attributes
+
+        if (!isAsn1Array(csrAsn1.value)) {
+            return 'Unknown';
+        }
+
         const certRequestInfo = csrAsn1.value[0];
 
-        // Subject is the second item:
-        //   [0] version
-        //   [1] subject
+        if (!certRequestInfo || !isAsn1Array(certRequestInfo.value)) {
+            return 'Unknown';
+        }
+
+        // Subject is the second item
         const subject = certRequestInfo.value[1];
 
-        if (!subject || !Array.isArray(subject.value)) {
+        if (!subject || !isAsn1Array(subject.value)) {
             return 'Unknown';
         }
 
         // Subject = SEQUENCE OF RDN
         for (const rdnSet of subject.value) {
-            if (!Array.isArray(rdnSet.value)) continue;
+            if (!rdnSet || !isAsn1Array(rdnSet.value)) {
+                continue;
+            }
 
             for (const attr of rdnSet.value) {
-                if (!Array.isArray(attr.value) || attr.value.length < 2) {
+                if (!attr || !isAsn1Array(attr.value) || attr.value.length < 2) {
                     continue;
                 }
 
@@ -66,10 +82,14 @@ function extractCnFromCsr(csrPem: string): string {
 
                 // 2.5.4.3 = commonName
                 if (
-                    oidNode?.type === forge.asn1.Type.OID &&
+                    oidNode &&
+                    oidNode.type === forge.asn1.Type.OID &&
+                    typeof oidNode.value === 'string' &&
                     forge.asn1.derToOid(oidNode.value) === '2.5.4.3'
                 ) {
-                    return valueNode.value || 'Unknown';
+                    if (valueNode && typeof valueNode.value === 'string') {
+                        return valueNode.value || 'Unknown';
+                    }
                 }
             }
         }
