@@ -163,7 +163,7 @@ const DashboardLayout = () => {
         <div className="min-h-screen bg-slate-50 flex font-sans antialiased text-slate-900">
             {/* Sidebar */}
             <aside className="w-64 h-screen bg-white border-r border-slate-200 flex flex-col fixed left-0 top-0 z-50">
-                <div className="h-14 flex items-center justify-center border-b border-slate-200 bg-white">
+                <div className="h-16 flex items-center justify-center border-b border-slate-200 bg-white">
                     <img 
                         src={logo} 
                         alt="SecureCMS Logo" 
