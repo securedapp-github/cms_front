@@ -12,7 +12,7 @@ const truncateId = (id: string) => {
 };
 
 export default function AppsList() {
-    const { data, error, isLoading, mutate } = useSWR<{ apps: AppConfig[] }>('apps', appsApi.listApps);
+    const { data, error, isLoading, mutate } = useSWR<{ apps: AppConfig[] }>('tenant/apps', appsApi.listApps);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingApp, setEditingApp] = useState<AppConfig | null>(null);
 
