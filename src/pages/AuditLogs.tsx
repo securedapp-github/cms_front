@@ -13,6 +13,7 @@ import {
     Info
 } from 'lucide-react';
 import { auditApi } from '../api/auditApi';
+import { tenantApi } from '../api/tenantApi';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { canExportCompliance } from '../utils/rbac';
@@ -35,6 +36,174 @@ interface Pagination {
     total_pages: number;
 }
 
+// QA-020: Month/Day/Year dropdown picker so the user can NEVER see/select a date outside
+// [profileCreatedAt, today]. Year list is hard-capped; months are filtered per year.
+const MONTHS = [
+    { v: '01', l: 'January' },
+    { v: '02', l: 'February' },
+    { v: '03', l: 'March' },
+    { v: '04', l: 'April' },
+    { v: '05', l: 'May' },
+    { v: '06', l: 'June' },
+    { v: '07', l: 'July' },
+    { v: '08', l: 'August' },
+    { v: '09', l: 'September' },
+    { v: '10', l: 'October' },
+    { v: '11', l: 'November' },
+    { v: '12', l: 'December' },
+];
+
+function daysInMonth(year: number, month1to12: number): number {
+    // month is 1..12
+    return new Date(year, month1to12, 0).getDate();
+}
+
+function rangeForDate(
+    ymd: string | null,
+): { year?: number; minMonth?: number; maxMonth?: number; minDay?: number; maxDay?: number } {
+    if (!ymd) return {};
+    const [y, m, d] = ymd.split('-').map((s) => parseInt(s, 10));
+    return { year: y, minMonth: m, maxMonth: m, minDay: d, maxDay: d };
+}
+
+interface DatePickerProps {
+    label: string;
+    value: string; // YYYY-MM-DD or ''
+    onChange: (next: string) => void;
+    minDate: string | null; // YYYY-MM-DD
+    maxDate: string; // YYYY-MM-DD (always today)
+    onOutOfRange?: (kind: 'min' | 'max') => void;
+}
+
+function clampYmd(value: string, minDate: string | null, maxDate: string): string {
+    if (!value) return value;
+    if (minDate && value < minDate) return minDate;
+    if (value > maxDate) return maxDate;
+    return value;
+}
+
+function DatePicker({ label, value, onChange, minDate, maxDate, onOutOfRange }: DatePickerProps) {
+    // minDate / maxDate are inclusive bounds.
+    const minInfo = minDate ? rangeForDate(minDate) : {};
+    const maxInfo = rangeForDate(maxDate);
+    const minYear = minInfo.year ?? maxInfo.year! - 100;
+    const maxYear = maxInfo.year!;
+
+    // Current selection, clamped into bounds.
+    const safeValue = clampYmd(value, minDate, maxDate);
+    const hasValue = !!safeValue;
+    const selYear = hasValue ? parseInt(safeValue.slice(0, 4), 10) : minYear;
+    const selMonth = hasValue ? parseInt(safeValue.slice(5, 7), 10) : (minInfo.minMonth ?? 1);
+    const selDay = hasValue ? parseInt(safeValue.slice(8, 10), 10) : 1;
+
+    // Year options: [minYear, maxYear]
+    const yearOptions: number[] = [];
+    for (let y = minYear; y <= maxYear; y++) yearOptions.push(y);
+
+    // Month options for selected year.
+    const monthMinForYear = selYear === minInfo.year ? (minInfo.minMonth ?? 1) : 1;
+    const monthMaxForYear = selYear === maxInfo.year ? (maxInfo.maxMonth ?? 12) : 12;
+    const monthOptions = MONTHS.filter((m) => {
+        const mv = parseInt(m.v, 10);
+        return mv >= monthMinForYear && mv <= monthMaxForYear;
+    });
+
+    // Day options for selected month/year.
+    const dayMin = selYear === minInfo.year && selMonth === minInfo.minMonth ? (minInfo.minDay ?? 1) : 1;
+    const dayMax = selYear === maxInfo.year && selMonth === maxInfo.maxMonth ? (maxInfo.maxDay ?? daysInMonth(selYear, selMonth)) : daysInMonth(selYear, selMonth);
+    const dayOptions: number[] = [];
+    for (let d = dayMin; d <= dayMax; d++) dayOptions.push(d);
+
+    const setYmd = (y: number, m: number, d: number) => {
+        const ymd = `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+        onChange(ymd);
+    };
+
+    const onYearChange = (raw: string) => {
+        const newYear = parseInt(raw, 10);
+        // Clamp month/day into the new year's bounds, then compute new YMD and clamp overall.
+        const newMonthMin = newYear === minInfo.year ? (minInfo.minMonth ?? 1) : 1;
+        const newMonthMax = newYear === maxInfo.year ? (maxInfo.maxMonth ?? 12) : 12;
+        const m = Math.min(Math.max(selMonth, newMonthMin), newMonthMax);
+        const dim = daysInMonth(newYear, m);
+        const newDayMin = newYear === minInfo.year && m === minInfo.minMonth ? (minInfo.minDay ?? 1) : 1;
+        const newDayMax = newYear === maxInfo.year && m === maxInfo.maxMonth ? (maxInfo.maxDay ?? dim) : dim;
+        const d = Math.min(Math.max(selDay, newDayMin), newDayMax);
+        const candidate = `${newYear.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+        const finalValue = clampYmd(candidate, minDate, maxDate);
+        if (finalValue !== candidate && onOutOfRange) {
+            onOutOfRange(finalValue < (minDate || '') ? 'min' : 'max');
+        }
+        onChange(finalValue);
+    };
+
+    const onMonthChange = (raw: string) => {
+        const newMonth = parseInt(raw, 10);
+        const dim = daysInMonth(selYear, newMonth);
+        const newDayMin = selYear === minInfo.year && newMonth === minInfo.minMonth ? (minInfo.minDay ?? 1) : 1;
+        const newDayMax = selYear === maxInfo.year && newMonth === maxInfo.maxMonth ? (maxInfo.maxDay ?? dim) : dim;
+        const d = Math.min(Math.max(selDay, newDayMin), newDayMax);
+        setYmd(selYear, newMonth, d);
+    };
+
+    const onDayChange = (raw: string) => {
+        setYmd(selYear, selMonth, parseInt(raw, 10));
+    };
+
+    const selectClass =
+        'px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all';
+
+    return (
+        <div className="flex-1 space-y-1.5">
+            <div className="flex items-center pl-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <select
+                    className={selectClass + ' flex-1'}
+                    value={selYear}
+                    onChange={(e) => onYearChange(e.target.value)}
+                    aria-label={`${label} year`}
+                >
+                    {yearOptions.map((y) => (
+                        <option key={y} value={y}>{y}</option>
+                    ))}
+                </select>
+                <select
+                    className={selectClass + ' flex-1'}
+                    value={selMonth.toString().padStart(2, '0')}
+                    onChange={(e) => onMonthChange(e.target.value)}
+                    aria-label={`${label} month`}
+                    disabled={monthOptions.length === 0}
+                >
+                    {monthOptions.length === 0 ? (
+                        <option value="">-</option>
+                    ) : (
+                        monthOptions.map((m) => (
+                            <option key={m.v} value={m.v}>{m.l}</option>
+                        ))
+                    )}
+                </select>
+                <select
+                    className={selectClass + ' flex-1'}
+                    value={selDay.toString().padStart(2, '0')}
+                    onChange={(e) => onDayChange(e.target.value)}
+                    aria-label={`${label} day`}
+                    disabled={dayOptions.length === 0}
+                >
+                    {dayOptions.length === 0 ? (
+                        <option value="">-</option>
+                    ) : (
+                        dayOptions.map((d) => (
+                            <option key={d} value={d.toString().padStart(2, '0')}>{d}</option>
+                        ))
+                    )}
+                </select>
+            </div>
+        </div>
+    );
+}
+
 const AuditLogs = () => {
     const { user } = useAuthStore();
     const [page, setPage] = useState(1);
@@ -42,6 +211,14 @@ const AuditLogs = () => {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [showMoreFilters, setShowMoreFilters] = useState(false);
+
+    // QA-020: profile/tenant creation date is the earliest selectable audit-log date.
+    // Reuse the cached 'tenant/me' SWR key so this dedupes with DashboardLayout.
+    const { data: tenantData } = useSWR('tenant/me', () => tenantApi.getCurrentTenant());
+    const profileCreatedAt = tenantData?.createdAt
+        ? new Date(tenantData.createdAt).toISOString().slice(0, 10)
+        : null;
+    const today = new Date().toISOString().slice(0, 10);
 
     const { data: response, isLoading: loading } = useSWR(
         ['audit-logs', page, actionFilter, startDate, endDate],
@@ -98,17 +275,17 @@ const AuditLogs = () => {
                         />
                     </div>
                     <div className="flex items-center gap-2">
-                        <button 
+                        <button
                             type="button"
                             onClick={() => setShowMoreFilters(!showMoreFilters)}
                             className={`inline-flex items-center px-4 py-2.5 border rounded-xl text-sm font-bold transition-all ${
-                                showMoreFilters 
+                                showMoreFilters
                                     ? 'bg-indigo-50 border-indigo-200 text-indigo-700 shadow-sm shadow-indigo-50'
                                     : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                             }`}
                         >
                             <Filter className="w-4 h-4 mr-2" />
-                            More Filters
+                            {showMoreFilters ? 'Close' : 'More Filters'}
                         </button>
                     </div>
                 </div>
@@ -116,29 +293,49 @@ const AuditLogs = () => {
                 {/* Collapsible Filter Panel */}
                 {showMoreFilters && (
                     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm animate-in slide-in-from-top-2 duration-300">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Date Range</label>
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="date"
-                                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between pl-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date Range</label>
+                                {(startDate || endDate) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setStartDate(''); setEndDate(''); setPage(1); }}
+                                        className="text-[10px] font-bold text-red-600 hover:text-red-700 uppercase tracking-widest"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <DatePicker
+                                    label="From"
                                     value={startDate}
-                                    onChange={(e) => {
-                                        setStartDate(e.target.value);
-                                        setPage(1);
+                                    onChange={(v) => { setStartDate(v); setPage(1); }}
+                                    minDate={profileCreatedAt}
+                                    maxDate={today}
+                                    onOutOfRange={(kind) => {
+                                        if (kind === 'min') toast.error('Start date cannot be before your profile creation date.');
+                                        else toast.error('Start date cannot be in the future.');
                                     }}
                                 />
-                                <span className="text-xs text-slate-400 font-bold">to</span>
-                                <input
-                                    type="date"
-                                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                <span className="text-xs text-slate-400 font-bold mt-9">to</span>
+                                <DatePicker
+                                    label="To"
                                     value={endDate}
-                                    onChange={(e) => {
-                                        setEndDate(e.target.value);
-                                        setPage(1);
+                                    onChange={(v) => { setEndDate(v); setPage(1); }}
+                                    minDate={profileCreatedAt}
+                                    maxDate={today}
+                                    onOutOfRange={(kind) => {
+                                        if (kind === 'min') toast.error('End date cannot be before your profile creation date.');
+                                        else toast.error('End date cannot be in the future.');
                                     }}
                                 />
                             </div>
+                            {profileCreatedAt && (
+                                <p className="text-[11px] text-slate-400 font-semibold pl-1">
+                                    Audit logs available from {profileCreatedAt} to {today}.
+                                </p>
+                            )}
                         </div>
                     </div>
                 )}
