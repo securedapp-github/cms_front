@@ -16,12 +16,33 @@ import {
     Trash2,
     UserMinus,
     Edit2,
-    ShieldAlert
+    ShieldAlert,
+    ChevronDown
 } from 'lucide-react';
 import { clientApi, Client } from '../api/clientApi';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { canManageOrgRoles } from '../utils/rbac';
+
+// Status options displayed in the table (matches existing badge semantics: 'inactive' => 'Pending')
+type ClientStatusFilter = 'active' | 'pending' | 'suspended';
+const CLIENT_STATUS_OPTIONS: { value: ClientStatusFilter; label: string }[] = [
+    { value: 'active', label: 'Active' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'suspended', label: 'Suspended' },
+];
+
+// Map a Client.status value to the filter category used in the popover.
+// DB stores 'active' | 'inactive' | 'suspended' | 'invited'; UI shows
+// 'inactive' and 'invited' as 'Pending' under one chip (both mean
+// "not yet active"). QA-040: 'invited' arrives from BE inviteClient flow.
+const statusToFilterCategory = (status?: string): ClientStatusFilter | null => {
+    if (!status) return null;
+    if (status === 'active') return 'active';
+    if (status === 'suspended') return 'suspended';
+    if (status === 'inactive' || status === 'invited') return 'pending';
+    return null;
+};
 
 const Clients = () => {
     const { user } = useAuthStore();
@@ -42,25 +63,75 @@ const Clients = () => {
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
+    // Filter popover state (QA-012). Empty Set = "no filter for that dimension".
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [filterRoles, setFilterRoles] = useState<Set<string>>(new Set());
+    const [filterStatuses, setFilterStatuses] = useState<Set<ClientStatusFilter>>(new Set());
+    const filterButtonRef = useRef<HTMLButtonElement>(null);
+    const filterPopoverRef = useRef<HTMLDivElement>(null);
+    const [filterPopoverPosition, setFilterPopoverPosition] = useState<{ top: number; left: number } | null>(null);
+
+    const toggleRoleFilter = (role: string) => {
+        setFilterRoles(prev => {
+            const next = new Set(prev);
+            if (next.has(role)) next.delete(role);
+            else next.add(role);
+            return next;
+        });
+    };
+    const toggleStatusFilter = (status: ClientStatusFilter) => {
+        setFilterStatuses(prev => {
+            const next = new Set(prev);
+            if (next.has(status)) next.delete(status);
+            else next.add(status);
+            return next;
+        });
+    };
+    const clearFilters = () => {
+        setFilterRoles(new Set());
+        setFilterStatuses(new Set());
+    };
+    const activeFilterCount = filterRoles.size + filterStatuses.size;
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setActiveMenu(null);
             }
+            if (
+                isFilterOpen &&
+                filterPopoverRef.current &&
+                !filterPopoverRef.current.contains(event.target as Node) &&
+                filterButtonRef.current &&
+                !filterButtonRef.current.contains(event.target as Node)
+            ) {
+                setIsFilterOpen(false);
+            }
         };
 
-        const handleScroll = () => setActiveMenu(null);
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && isFilterOpen) {
+                setIsFilterOpen(false);
+            }
+        };
 
-        if (activeMenu) {
+        const handleScroll = () => {
+            setActiveMenu(null);
+            if (isFilterOpen) setIsFilterOpen(false);
+        };
+
+        if (activeMenu || isFilterOpen) {
             document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('keydown', handleKeyDown);
             window.addEventListener('scroll', handleScroll, true);
         }
 
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('scroll', handleScroll, true);
         };
-    }, [activeMenu]);
+    }, [activeMenu, isFilterOpen]);
 
     const handleMenuToggle = (clientId: string) => {
         if (activeMenu === clientId) {
@@ -152,10 +223,27 @@ const Clients = () => {
         return '??';
     };
 
-    const filteredClients = clients.filter(c =>
-        (c.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (c.email?.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredClients = clients.filter(c => {
+        // Text search across name + email
+        const term = searchTerm.toLowerCase();
+        const matchesSearch = !term
+            || c.name?.toLowerCase().includes(term)
+            || c.email?.toLowerCase().includes(term);
+        if (!matchesSearch) return false;
+
+        // Role filter (empty Set = no role filter)
+        if (filterRoles.size > 0 && (!c.role || !filterRoles.has(c.role))) {
+            return false;
+        }
+
+        // Status filter (empty Set = no status filter)
+        if (filterStatuses.size > 0) {
+            const category = statusToFilterCategory(c.status);
+            if (!category || !filterStatuses.has(category)) return false;
+        }
+
+        return true;
+    });
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -189,9 +277,35 @@ const Clients = () => {
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    <button className="inline-flex items-center px-3 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+                    <button
+                        ref={filterButtonRef}
+                        type="button"
+                        onClick={() => {
+                            if (!isFilterOpen && filterButtonRef.current) {
+                                const rect = filterButtonRef.current.getBoundingClientRect();
+                                setFilterPopoverPosition({
+                                    top: rect.bottom + window.scrollY + 8,
+                                    left: rect.right + window.scrollX - 288, // align right edge of popover (w-72)
+                                });
+                            }
+                            setIsFilterOpen(prev => !prev);
+                        }}
+                        className={`inline-flex items-center px-3 py-2 border rounded-lg text-sm font-semibold transition-colors ${
+                            isFilterOpen || activeFilterCount > 0
+                                ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                                : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                        aria-expanded={isFilterOpen}
+                        aria-haspopup="dialog"
+                    >
                         <Filter className="w-4 h-4 mr-2" />
                         Filters
+                        {activeFilterCount > 0 && (
+                            <span className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-indigo-600 text-white text-[10px] font-black">
+                                {activeFilterCount}
+                            </span>
+                        )}
+                        <ChevronDown className={`w-3.5 h-3.5 ml-1.5 transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} />
                     </button>
                 </div>
             </div>
@@ -219,7 +333,20 @@ const Clients = () => {
                             ) : filteredClients.length === 0 ? (
                                 <tr>
                                     <td colSpan={4} className="px-6 py-12 text-center">
-                                        <p className="text-sm text-slate-500 font-medium">No clients found.</p>
+                                        <p className="text-sm text-slate-500 font-medium">
+                                            {clients.length === 0
+                                                ? 'No clients found.'
+                                                : 'No clients match the current filters.'}
+                                        </p>
+                                        {clients.length > 0 && activeFilterCount > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={clearFilters}
+                                                className="mt-3 inline-flex items-center px-3 py-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider"
+                                            >
+                                                Clear filters
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ) : (
@@ -256,7 +383,11 @@ const Clients = () => {
                                                     ? 'bg-amber-50 text-amber-700 border-amber-100'
                                                     : client.status === 'active'
                                                         ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                                                        : 'bg-slate-50 text-slate-700 border-slate-100'
+                                                        : client.status === 'invited'
+                                                            // QA-040: distinct blue/info badge for invited clients
+                                                            // (vs. slate-gray for the generic fallback).
+                                                            ? 'bg-blue-50 text-blue-700 border-blue-100'
+                                                            : 'bg-slate-50 text-slate-700 border-slate-100'
                                             }`}>
                                                 {client.status === 'inactive' ? 'Pending' : (client.status?.charAt(0).toUpperCase() + (client.status?.slice(1) || 'Active'))}
                                             </span>
@@ -513,6 +644,102 @@ const Clients = () => {
                         </form>
                     </div>
                 </div>
+            )}
+
+            {/* Filter Popover (QA-012) */}
+            {isFilterOpen && filterPopoverPosition && createPortal(
+                <div
+                    ref={filterPopoverRef}
+                    style={{
+                        position: 'absolute',
+                        top: filterPopoverPosition.top,
+                        left: filterPopoverPosition.left,
+                        zIndex: 9999,
+                    }}
+                    role="dialog"
+                    aria-label="Filter clients"
+                    className="w-72 bg-white rounded-2xl shadow-2xl border border-slate-100 p-4 animate-in fade-in zoom-in-95 duration-200"
+                >
+                    <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-xs font-black text-slate-700 uppercase tracking-widest">Filters</h4>
+                        {activeFilterCount > 0 && (
+                            <button
+                                type="button"
+                                onClick={clearFilters}
+                                className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider"
+                            >
+                                Clear all
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Role filter */}
+                    <div className="space-y-2">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Role</p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {(['org_admin', 'operations_manager', 'auditor_compliance'] as const).map(role => {
+                                const active = filterRoles.has(role);
+                                const label = role === 'org_admin'
+                                    ? 'Org Admin'
+                                    : role === 'operations_manager'
+                                        ? 'Operations Manager'
+                                        : 'Auditor / Compliance';
+                                return (
+                                    <button
+                                        key={role}
+                                        type="button"
+                                        onClick={() => toggleRoleFilter(role)}
+                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
+                                            active
+                                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50'
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Status filter */}
+                    <div className="space-y-2 mt-4">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {CLIENT_STATUS_OPTIONS.map(opt => {
+                                const active = filterStatuses.has(opt.value);
+                                return (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => toggleStatusFilter(opt.value)}
+                                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors ${
+                                            active
+                                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50'
+                                        }`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <p className="text-[10px] text-slate-500 font-medium">
+                            {filteredClients.length} of {clients.length} match
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setIsFilterOpen(false)}
+                            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg uppercase tracking-widest"
+                        >
+                            Done
+                        </button>
+                    </div>
+                </div>,
+                document.body
             )}
         </div>
     );
