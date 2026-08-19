@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import useSWR, { mutate as globalMutate } from 'swr';
 import { dsrApi, DSRRequest, DSRTimelineEntry } from '../api/dsrApi';
 import {
-    Plus,
     Loader2,
     Search,
     User,
@@ -19,7 +18,6 @@ import {
     History,
     Info,
     Download,
-    ChevronRight,
     ChevronDown,
     ArrowRight,
     AppWindow
@@ -41,13 +39,6 @@ const STATUS_CONFIG: Record<string, { label: string, color: string, icon: any }>
     rejected: { label: 'Rejected', color: 'red', icon: AlertCircle },
     escalated: { label: 'Escalated', color: 'purple', icon: AlertCircle },
 };
-
-const REQUEST_TYPES = [
-    { id: 'access', label: 'Data Access' },
-    { id: 'erasure', label: 'Data Erasure' },
-    { id: 'rectification', label: 'Data Rectification' },
-    { id: 'portability', label: 'Data Portability' },
-];
 
 export default function DSRRequests() {
     const { user } = useAuthStore();
@@ -72,49 +63,15 @@ export default function DSRRequests() {
     
     const error = swrError?.response?.data?.error || null;
 
-    const [showCreateModal, setShowCreateModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<DSRRequest | null>(null);
     const [timeline, setTimeline] = useState<DSRTimelineEntry[]>([]);
     const [loadingTimeline, setLoadingTimeline] = useState(false);
 
-    // Form fields for Create
-    const [userId, setUserId] = useState('');
-    const [type, setType] = useState('access');
-    const [isCreating, setIsCreating] = useState(false);
-
     // Form fields for Update
     const [newStatus, setNewStatus] = useState('');
     const [metadataJSON, setMetadataJSON] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
-
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedAppId) {
-            toast.error('Please select an app first');
-            return;
-        }
-        if (!userId) {
-            toast.error('User ID is required');
-            return;
-        }
-        
-        try {
-            setIsCreating(true);
-            await dsrApi.createDsrRequest(selectedAppId, { user_id: userId, type });
-            
-            toast.success('DSR Request created successfully');
-            setShowCreateModal(false);
-            setUserId('');
-            mutate();
-            globalMutate('dashboard-stats');
-            globalMutate('recent-activity');
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || 'Failed to create request');
-        } finally {
-            setIsCreating(false);
-        }
-    };
 
     const handleViewDetails = async (request: DSRRequest) => {
         if (!selectedAppId) return;
@@ -234,15 +191,6 @@ export default function DSRRequests() {
                     <h2 className="text-2xl font-bold text-slate-900 tracking-tight">DSR Processing Queue</h2>
                     <p className="text-slate-500 font-medium text-sm">Review and process data subject requests for the selected app.</p>
                 </div>
-                {canManageDSR(user?.role) && (
-                    <button
-                        onClick={() => setShowCreateModal(true)}
-                        className="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95"
-                    >
-                        <Plus className="w-5 h-5 mr-2" />
-                        Create DSR Request
-                    </button>
-                )}
             </div>
 
             {/* Stats Cards */}
@@ -444,88 +392,6 @@ export default function DSRRequests() {
                     </table>
                 </div>
             </div>
-
-            {/* Create DSR Modal */}
-            {showCreateModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200/50 animate-in zoom-in-95 duration-300">
-                        <div className="px-10 py-10 border-b border-slate-100 flex items-center justify-between bg-white">
-                            <div>
-                                <h3 className="text-2xl font-bold text-slate-800 tracking-tight leading-tight">New DSR Request</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 flex items-center">
-                                    <span className="w-6 h-[1.5px] bg-slate-200 mr-2 rounded-full"></span>
-                                    Initiating data protection workflow
-                                </p>
-                            </div>
-                            <button onClick={() => setShowCreateModal(false)} className="p-2 hover:bg-slate-50 rounded-xl text-slate-300 hover:text-slate-500 transition-all border border-slate-100/50">
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleCreate} className="p-10 space-y-8">
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Identity Verification</label>
-                                <div className="relative group flex items-center">
-                                    <div className="absolute left-4 w-9 h-9 bg-slate-50 rounded-xl flex items-center justify-center group-focus-within:bg-indigo-50 transition-colors border border-slate-200 group-focus-within:border-indigo-100">
-                                        <User className="w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="Enter User ID or Pseudonymous ID..."
-                                        className="w-full pl-16 pr-6 py-4 bg-white border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-400 outline-none transition-all placeholder:text-slate-300 shadow-sm"
-                                        value={userId}
-                                        onChange={(e) => setUserId(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Protocol Selection</label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {REQUEST_TYPES.map(rt => (
-                                        <button
-                                            key={rt.id}
-                                            type="button"
-                                            onClick={() => setType(rt.id)}
-                                            className={`p-4 rounded-2xl border-2 text-left transition-all relative overflow-hidden group/card ${
-                                                type === rt.id
-                                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100'
-                                                    : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-100 hover:bg-slate-50/50'
-                                            }`}
-                                        >
-                                            <div className={`text-[8px] font-bold uppercase tracking-widest mb-0.5 ${type === rt.id ? 'text-indigo-200' : 'text-slate-400'}`}>Procedure</div>
-                                            <p className="text-xs font-bold leading-tight uppercase tracking-tight">{rt.label}</p>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCreateModal(false)}
-                                    className="flex-1 py-4 bg-slate-50 hover:bg-slate-100 text-slate-500 text-[10px] font-bold rounded-2xl transition-all active:scale-95 uppercase tracking-widest border border-slate-200"
-                                >
-                                    Dismiss
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isCreating}
-                                    className="flex-1 py-4 bg-slate-900 hover:bg-indigo-950 text-white text-[10px] font-bold rounded-2xl shadow-lg shadow-slate-200 transition-all active:scale-95 disabled:opacity-50 inline-flex items-center justify-center uppercase tracking-widest"
-                                >
-                                    {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-                                        <>
-                                            Execute Request
-                                            <ChevronRight className="w-3.5 h-3.5 ml-2" />
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
 
             {/* Update Status Modal */}
             {showUpdateModal && selectedRequest && (
