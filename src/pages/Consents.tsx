@@ -159,6 +159,14 @@ const Consents = () => {
             toast.error('Please provide at least Email or Phone Number');
             return;
         }
+        if (newConsentEmail && !isEmail(newConsentEmail)) {
+            toast.error('Please enter a valid email address');
+            return;
+        }
+        if (newConsentPhone && !isPhone(newConsentPhone)) {
+            toast.error('Please enter a valid phone number (6–15 digits, optional +)');
+            return;
+        }
         if (newConsentPurposeIds.length === 0 || !newConsentPolicyId) {
             toast.error('Please select at least one Purpose and a Policy');
             return;
@@ -674,12 +682,22 @@ const Consents = () => {
                                                 </div>
                                                 <input
                                                     type="email"
+                                                    inputMode="email"
                                                     placeholder="user@example.com"
-                                                    className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
+                                                    className={`w-full pl-11 pr-4 py-4 bg-slate-50 border rounded-2xl text-sm font-bold placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all ${
+                                                        newConsentEmail && !isEmail(newConsentEmail)
+                                                            ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/10'
+                                                            : 'border-slate-200'
+                                                    }`}
                                                     value={newConsentEmail}
                                                     onChange={(e) => setNewConsentEmail(e.target.value)}
                                                 />
                                             </div>
+                                            {newConsentEmail && !isEmail(newConsentEmail) && (
+                                                <p className="text-[10px] font-bold text-rose-600 ml-1">
+                                                    Please enter a valid email address (e.g., user@example.com).
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
@@ -688,13 +706,30 @@ const Consents = () => {
                                                     <User className="w-4 h-4" />
                                                 </div>
                                                 <input
-                                                    type="text"
+                                                    type="tel"
+                                                    inputMode="tel"
                                                     placeholder="+1234567890"
-                                                    className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
+                                                    maxLength={16}
+                                                    className={`w-full pl-11 pr-4 py-4 bg-slate-50 border rounded-2xl text-sm font-bold placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all ${
+                                                        newConsentPhone && !isPhone(newConsentPhone)
+                                                            ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/10'
+                                                            : 'border-slate-200'
+                                                    }`}
                                                     value={newConsentPhone}
-                                                    onChange={(e) => setNewConsentPhone(e.target.value)}
+                                                    onChange={(e) => {
+                                                        // Allow only digits with optional leading +
+                                                        const raw = e.target.value;
+                                                        const cleaned = raw.replace(/[^\d+]/g, '');
+                                                        const normalized = cleaned.replace(/(?!^)\+/g, '');
+                                                        setNewConsentPhone(normalized);
+                                                    }}
                                                 />
                                             </div>
+                                            {newConsentPhone && !isPhone(newConsentPhone) && (
+                                                <p className="text-[10px] font-bold text-rose-600 ml-1">
+                                                    Phone must be 6–15 digits, optionally starting with +
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
 
