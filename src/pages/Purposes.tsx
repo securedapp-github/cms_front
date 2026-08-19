@@ -52,7 +52,15 @@ const Purposes = () => {
             toast.error('Please select at least one data element');
             return;
         }
-        
+
+        // Validation: Validity (Days) must be a positive integer (>0)
+        const days = Number(formData.validity_days);
+        if (formData.validity_days === '' || !Number.isInteger(days) || days <= 0) {
+            setValidationError('Please enter a positive whole number of days for validity (greater than 0).');
+            toast.error('Please enter a positive whole number of days for validity (greater than 0)');
+            return;
+        }
+
         // Clear any previous validation errors
         setValidationError(null);
         
@@ -259,14 +267,41 @@ const Purposes = () => {
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Validity (Days)</label>
                                     <input
-                                        type="number"
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
                                         required
-                                        min="1"
+                                        maxLength={5}
                                         placeholder="Enter number of days"
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                                        className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all ${
+                                            !formData.validity_days || Number(formData.validity_days) <= 0
+                                                ? 'border-red-300 bg-red-50/50'
+                                                : 'border-slate-200'
+                                        }`}
                                         value={formData.validity_days}
-                                        onChange={(e) => setFormData({ ...formData, validity_days: e.target.value === '' ? '' : parseInt(e.target.value) || 0 })}
+                                        onKeyDown={(e) => {
+                                            // Block scientific-notation chars that <input type="number"> still allows: e, E, +, -
+                                            // Also block '0' as the first character so validity can never be 0.
+                                            if (['e', 'E', '+', '-', '.', ',', '0'].includes(e.key)) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        onChange={(e) => {
+                                            // Strip anything that isn't a digit; cap at 5 chars.
+                                            const cleaned = e.target.value.replace(/[^0-9]/g, '').slice(0, 5);
+                                            // Reject 0 entirely (also "0", "00", "0000..."): coerce to ''.
+                                            const normalized = cleaned === '' || Number(cleaned) <= 0 ? '' : Number(cleaned);
+                                            setFormData({ ...formData, validity_days: normalized });
+                                            if (validationError && normalized) {
+                                                setValidationError(null);
+                                            }
+                                        }}
                                     />
+                                    {(!formData.validity_days || Number(formData.validity_days) <= 0) && (
+                                        <p className="mt-1 text-[10px] text-red-600 font-semibold pl-1">
+                                            Please enter a positive whole number of days.
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="space-y-1.5">
@@ -345,10 +380,17 @@ const Purposes = () => {
                                 }} className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Cancel</button>
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting || !formData.name.trim() || formData.required_data.length === 0}
+                                    disabled={
+                                        isSubmitting ||
+                                        !formData.name.trim() ||
+                                        formData.required_data.length === 0 ||
+                                        !formData.validity_days ||
+                                        Number(formData.validity_days) <= 0
+                                    }
                                     title={
                                         !formData.name.trim() ? 'Purpose name is required' :
                                         formData.required_data.length === 0 ? 'Please select at least one data element' :
+                                        !formData.validity_days || Number(formData.validity_days) <= 0 ? 'Validity must be a positive whole number of days' :
                                         ''
                                     }
                                     className="px-8 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 inline-flex items-center"
