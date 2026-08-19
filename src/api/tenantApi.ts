@@ -119,4 +119,18 @@ export const tenantApi = {
         const response = await apiClient.delete(`/tenant/api-keys/${id}`);
         return response.data;
     },
+    rotateApiKey: async (id: string) => {
+        const response = await apiClient.post<any>(`/tenant/api-keys/${id}/rotate`);
+        const key = response.data;
+        return {
+            id: key.id,
+            name: key.name || 'Unnamed Key',
+            key: key.key,
+            keyMasked: key.key ? `...${String(key.key).slice(-4)}` : '...',
+            createdDate: new Date(key.created_at).toLocaleDateString(),
+            expiryDate: 'Never',
+            status: key.active ? 'Active' : 'Revoked',
+            rotatedFrom: key.rotated_from || null,
+        } as ApiKey;
+    },
 };
