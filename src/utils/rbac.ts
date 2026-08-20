@@ -46,6 +46,9 @@ export const hasPermission = (userRole: string | undefined, permission: string):
 export const canViewPlatformLevel = (role?: string) => hasPermission(role, 'disable_org');
 export const canManageOrgRoles = (role?: string) => hasPermission(role, 'manage_roles');
 export const canManageDataCatalog = (role?: string) => hasPermission(role, 'manage_templates');
+// Deletion of platform-wide shared data catalog entries is restricted to SUPER_ADMIN only.
+// ORG_ADMIN and other roles can add new entries but cannot delete them.
+export const canDeleteDataCatalog = (role?: string) => role === ROLES.SUPER_ADMIN;
 export const canManagePurposes = (role?: string) => hasPermission(role, 'manage_purposes');
 export const canManageCredentials = (role?: string) => hasPermission(role, 'manage_api');
 export const canManageConsentState = (role?: string) => hasPermission(role, 'manage_consents');

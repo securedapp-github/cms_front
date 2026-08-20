@@ -4,7 +4,7 @@ import { Database, Loader2, Info, Plus, Trash2, X } from 'lucide-react';
 import { dataCatalogApi, DataCatalogEntry } from '../api/dataCatalogApi';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
-import { canManageDataCatalog } from '../utils/rbac';
+import { canManageDataCatalog, canDeleteDataCatalog } from '../utils/rbac';
 
 export default function DataCatalog() {
     const { user } = useAuthStore();
@@ -150,6 +150,7 @@ export default function DataCatalog() {
                                     <option value="LOW">LOW</option>
                                     <option value="MEDIUM">MEDIUM</option>
                                     <option value="HIGH">HIGH</option>
+                                    <option value="CRITICAL">CRITICAL</option>
                                     <option value="RESTRICTED">RESTRICTED</option>
                                 </select>
                             </div>
@@ -206,13 +207,14 @@ export default function DataCatalog() {
                                                 <span className="text-[9px] text-slate-400 font-medium">{entry.data_id}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 max-w-[180px] truncate" title={entry.category || 'Uncategorized'}>
                                                 {entry.category || 'Uncategorized'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`inline-block px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
+                                                entry.sensitivity === 'CRITICAL' ? 'bg-purple-50 text-purple-700 border-purple-200' :
                                                 entry.sensitivity === 'RESTRICTED' ? 'bg-purple-50 text-purple-700 border-purple-200' :
                                                 entry.sensitivity === 'HIGH' ? 'bg-rose-50 text-rose-700 border-rose-100' :
                                                 entry.sensitivity === 'MEDIUM' ? 'bg-amber-50 text-amber-700 border-amber-100' :
@@ -237,10 +239,11 @@ export default function DataCatalog() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            {canManageDataCatalog(user?.role) && (
-                                                <button 
+                                            {canDeleteDataCatalog(user?.role) && (
+                                                <button
                                                     onClick={() => handleDelete(entry.id, entry.data_id)}
                                                     className="p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-md transition-colors"
+                                                    title="Delete entry"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
